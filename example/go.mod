@@ -4,7 +4,7 @@ go 1.23.8
 
 require (
 	github.com/labstack/echo/v4 v4.13.3
-	github.com/thoriqadillah/gema v0.0.0-20250416123850-a131e45737dc
+	github.com/thoriqadillah/gema v0.0.0-20250417025359-90b695743cd3
 	github.com/uptrace/bun v1.2.11
 	go.uber.org/fx v1.23.0
 )
