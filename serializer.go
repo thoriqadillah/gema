@@ -32,9 +32,7 @@ func (d jsonSerializer) Deserialize(c echo.Context, i interface{}) error {
 	return err
 }
 
-func decorateJsonSerializer(e *echo.Echo) *echo.Echo {
+var decorateJsonSerializer = fx.Decorate(func(e *echo.Echo) *echo.Echo {
 	e.JSONSerializer = &jsonSerializer{}
 	return e
-}
-
-var DecorateJsonSerializer = fx.Decorate(decorateJsonSerializer)
+})

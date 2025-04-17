@@ -1,6 +1,7 @@
 package gema
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-playground/locales/en"
@@ -55,21 +56,20 @@ func (b *binder) Bind(i interface{}, c echo.Context) error {
 	return nil
 }
 
-// ValidatorModule will register new validation rules and decorate echo binder
-// with custom validation with go-playground/validator
-func ValidatorModule(registry map[string]validator.Func) fx.Option {
-	for name, fn := range registry {
-		if err := validate.RegisterValidation(name, fn); err != nil {
-			panic(err)
-		}
-	}
+var decorateBinder = fx.Decorate(func(e *echo.Echo) *echo.Echo {
+	e.Binder = &binder{}
+	return e
+})
 
-	return fx.Module("validator", fx.Decorate(
-		func(e *echo.Echo) *echo.Echo {
-			e.Binder = &binder{}
-			return e
-		},
-	))
+func registerValidator(registry map[string]validator.Func) fx.Option {
+	return fx.Invoke(func() {
+		for name, fn := range registry {
+			fmt.Printf("[Gema] Registering custom %s validator\n", name)
+			if err := validate.RegisterValidation(name, fn); err != nil {
+				panic(err)
+			}
+		}
+	})
 }
 
 func init() {

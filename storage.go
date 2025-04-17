@@ -16,8 +16,9 @@ type Storage interface {
 	Delete(filename string) error
 }
 
-type StorageFacade struct {
+type StorageFacade interface {
 	Storage
+	Use(driver StorageName, opts ...OptionFunc) Storage
 }
 
 type Option struct {
@@ -44,13 +45,13 @@ type StorageOption struct {
 
 func StorageModule(name StorageName, opts ...OptionFunc) fx.Option {
 	return fx.Module("storage", fx.Provide(
-		func() *StorageFacade {
+		func() StorageFacade {
 			return New(name, opts...)
 		},
 	))
 }
 
-func New(name StorageName, opts ...OptionFunc) *StorageFacade {
+func New(name StorageName, opts ...OptionFunc) StorageFacade {
 	pwd, _ := os.Getwd()
 	opt := &Option{
 		tempDir: pwd + "/storage/tmp",
@@ -70,13 +71,15 @@ func New(name StorageName, opts ...OptionFunc) *StorageFacade {
 	return withFacade(storage)
 }
 
-func withFacade(s Storage) *StorageFacade {
-	return &StorageFacade{
-		Storage: s,
-	}
+type storageFacade struct {
+	Storage
 }
 
-func (s *StorageFacade) Use(driver StorageName, opts ...OptionFunc) Storage {
+func withFacade(s Storage) StorageFacade {
+	return &storageFacade{s}
+}
+
+func (s *storageFacade) Use(driver StorageName, opts ...OptionFunc) Storage {
 	return New(driver, opts...)
 }
 

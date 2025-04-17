@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
@@ -78,16 +79,6 @@ func validateController(ctlConstructor Constructor) bool {
 	return hasControllerReturn
 }
 
-func start(
-	port string,
-	lc fx.Lifecycle,
-	e *echo.Echo,
-	pool *pgxpool.Pool,
-	logger *zap.Logger,
-) {
-
-}
-
 func Start(port string) fx.Option {
 	return fx.Module("start", fx.Invoke(
 		func(lc fx.Lifecycle, e *echo.Echo, pool *pgxpool.Pool, logger *zap.Logger) {
@@ -133,4 +124,14 @@ func Start(port string) fx.Option {
 			})
 		},
 	))
+}
+
+// DecorateEcho will decorate echo instance with the custom json serializer
+// and binder + struct validator with go-playground/validator
+func DecorateEcho(customValidation map[string]validator.Func) fx.Option {
+	return fx.Module("echo",
+		registerValidator(customValidation),
+		decorateBinder,
+		decorateJsonSerializer,
+	)
 }
