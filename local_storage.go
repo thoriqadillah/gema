@@ -1,6 +1,7 @@
 package gema
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,12 +10,14 @@ import (
 const LocalStorage StorageName = "local"
 
 type local struct {
-	tmpDir string
+	tmpDir        string
+	fullRoutePath string
 }
 
 func createLocal(option *StorageOption) Storage {
 	return &local{
-		tmpDir: option.TempDir,
+		tmpDir:        option.TempDir,
+		fullRoutePath: option.FullRoutePath,
 	}
 }
 
@@ -39,7 +42,8 @@ func (l *local) Upload(filename string, src io.Reader) (string, error) {
 		return "", err
 	}
 
-	return filename, nil
+	path := fmt.Sprintf("%s/%s", l.fullRoutePath, filename)
+	return path, nil
 }
 
 func (l *local) Delete(filename string) error {

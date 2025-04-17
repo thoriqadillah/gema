@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,49 +33,14 @@ func registerController(c Controller) {
 	controllers = append(controllers, c)
 }
 
-// RegisterModule will register invoke the controller constructor
+// RegisterController will register invoke the controller constructor
 // and register the controller to the echo instance as well as any other providers
 // that are passed in
-func RegisterModule(controller Constructor, providers ...Constructor) fx.Option {
-	name := fmt.Sprintf("%T", controller)
-	if ok := validateController(controller); !ok {
-		panic(fmt.Sprintf("[Gema] %s is not a valid controller", name))
-	}
-
-	fxOptions := []fx.Option{}
-	for _, provider := range providers {
-		fxOptions = append(fxOptions, fx.Provide(provider))
-	}
-
-	fxOptions = append(fxOptions,
-		fx.Provide(controller),
+func RegisterController(name string, controller Constructor) fx.Option {
+	return fx.Module("controller."+name,
+		fx.Provide(fx.Private, controller),
 		fx.Invoke(registerController),
 	)
-
-	return fx.Module(name, fxOptions...)
-}
-
-func validateController(ctlConstructor Constructor) bool {
-	t := reflect.TypeOf(ctlConstructor)
-	if t.Kind() != reflect.Func {
-		return false
-	}
-
-	// Check if the function returns at least one value
-	if t.NumOut() == 0 {
-		return false
-	}
-
-	// Check if any of the return values implements Controller interface
-	hasControllerReturn := false
-	for i := 0; i < t.NumOut(); i++ {
-		if t.Out(i).Implements(reflect.TypeOf((*Controller)(nil)).Elem()) {
-			hasControllerReturn = true
-			break
-		}
-	}
-
-	return hasControllerReturn
 }
 
 func Start(port string) fx.Option {
