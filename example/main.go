@@ -1,6 +1,8 @@
 package main
 
 import (
+	"example/env"
+
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/thoriqadillah/gema"
@@ -17,12 +19,11 @@ func httpServer(logger *zap.Logger) *echo.Echo {
 
 func main() {
 	godotenv.Load()
-	appEnv := gema.Env("APP_ENV").String()
 
 	app := fx.New(
-		gema.LoggerModule(appEnv),
+		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
-		gema.DatabaseModule("postgres://packform:packform@localhost:5432/packform?sslmode=disable"),
+		gema.DatabaseModule(env.DB_URL),
 		gema.StorageModule(gema.LocalStorage),
 		gema.RegisterModule(
 			newController,
