@@ -13,25 +13,18 @@ import (
 
 // DatabaseModule connect the database using bun with pgxpool
 func DatabaseModule(dsn string) fx.Option {
-	return fx.Module("database", fx.Provide(
-		func(lc fx.Lifecycle) (*pgxpool.Pool, *bun.DB) {
-			pool, err := pgxpool.New(context.Background(), dsn)
-			if err != nil {
-				log.Fatal(err)
-			}
+	config, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		panic(err)
+	}
 
-			sql := stdlib.OpenDBFromPool(pool)
-			bundb := bun.NewDB(sql, pgdialect.New())
-
-			return pool, bundb
-		},
-	))
+	return DatabaseModuleWithOption(config)
 }
 
-func DatabaseModuleWithOption(option *pgxpool.Config) fx.Option {
+func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 	return fx.Module("database", fx.Provide(
-		func(lc fx.Lifecycle) (*pgxpool.Pool, *bun.DB) {
-			pool, err := pgxpool.NewWithConfig(context.Background(), option)
+		func() (*pgxpool.Pool, *bun.DB) {
+			pool, err := pgxpool.NewWithConfig(context.Background(), config)
 			if err != nil {
 				log.Fatal(err)
 			}
