@@ -9,7 +9,7 @@ type exampleController struct {
 	store Store
 }
 
-func newExampleController(store Store) gema.Controller {
+func newController(store Store) gema.Controller {
 	return &exampleController{
 		store: store,
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type Controller interface {
@@ -77,9 +78,19 @@ func validateController(ctlConstructor Constructor) bool {
 	return hasControllerReturn
 }
 
+func start(
+	port string,
+	lc fx.Lifecycle,
+	e *echo.Echo,
+	pool *pgxpool.Pool,
+	logger *zap.Logger,
+) {
+
+}
+
 func Start(port string) fx.Option {
 	return fx.Module("start", fx.Invoke(
-		func(lc fx.Lifecycle, e *echo.Echo, pool *pgxpool.Pool) {
+		func(lc fx.Lifecycle, e *echo.Echo, pool *pgxpool.Pool, logger *zap.Logger) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					for _, controller := range controllers {
@@ -105,6 +116,8 @@ func Start(port string) fx.Option {
 					return pool.Ping(ctx)
 				},
 				OnStop: func(ctx context.Context) error {
+					defer logger.Sync()
+
 					for _, controller := range controllers {
 						if closer, ok := controller.(Closer); ok {
 							if err := closer.Close(ctx); err != nil {
