@@ -7,7 +7,6 @@ import (
 	"github.com/goccy/go-json"
 
 	"github.com/labstack/echo/v4"
-	"go.uber.org/fx"
 )
 
 type jsonSerializer struct{}
@@ -32,7 +31,6 @@ func (d jsonSerializer) Deserialize(c echo.Context, i interface{}) error {
 	return err
 }
 
-var decorateJsonSerializer = fx.Decorate(func(e *echo.Echo) *echo.Echo {
+func registerCustomSerializer(e *echo.Echo) {
 	e.JSONSerializer = &jsonSerializer{}
-	return e
-})
+}

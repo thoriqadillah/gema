@@ -23,6 +23,7 @@ func main() {
 	app := fx.New(
 		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
+		gema.DecorateEcho(),
 		gema.DatabaseModule(env.DB_URL),
 		gema.StorageModule(gema.LocalStorage),
 		gema.RegisterModule(

@@ -128,10 +128,15 @@ func Start(port string) fx.Option {
 
 // DecorateEcho will decorate echo instance with the custom json serializer
 // and binder + struct validator with go-playground/validator
-func DecorateEcho(customValidation map[string]validator.Func) fx.Option {
+func DecorateEcho(customValidation ...map[string]validator.Func) fx.Option {
+	validationMap := make(map[string]validator.Func)
+	if len(customValidation) > 0 {
+		validationMap = customValidation[0]
+	}
+
 	return fx.Module("echo",
-		registerValidator(customValidation),
-		decorateBinder,
-		decorateJsonSerializer,
+		registerValidator(validationMap),
+		fx.Invoke(registerCustomBinder),
+		fx.Invoke(registerCustomSerializer),
 	)
 }

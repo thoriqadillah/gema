@@ -56,10 +56,9 @@ func (b *binder) Bind(i interface{}, c echo.Context) error {
 	return nil
 }
 
-var decorateBinder = fx.Decorate(func(e *echo.Echo) *echo.Echo {
+func registerCustomBinder(e *echo.Echo) {
 	e.Binder = &binder{}
-	return e
-})
+}
 
 func registerValidator(registry map[string]validator.Func) fx.Option {
 	return fx.Invoke(func() {
