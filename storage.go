@@ -18,43 +18,39 @@ type Storage interface {
 
 type StorageFacade interface {
 	Storage
-	Use(driver StorageName, opts ...OptionFunc) Storage
-}
-
-type Option struct {
-	// The directory to store temporary files for local storage
-	tempDir string
-}
-
-type Factory func(option *Option) Storage
-
-var providers = map[StorageName]Factory{}
-
-type OptionFunc func(*Option)
-
-func WithTempDir(tempDir string) OptionFunc {
-	return func(o *Option) {
-		o.tempDir = tempDir
-	}
+	Use(driver StorageName, opts ...StorageOptionFunc) Storage
 }
 
 type StorageOption struct {
-	name StorageName
-	opts []OptionFunc
+	// The directory to store temporary files for local storage.
+	// Default is `pwd + "/storage/tmp"`
+	TempDir string
 }
 
-func StorageModule(name StorageName, opts ...OptionFunc) fx.Option {
+type StorageFactory func(option *StorageOption) Storage
+
+var providers = map[StorageName]StorageFactory{}
+
+type StorageOptionFunc func(*StorageOption)
+
+func WithTempDir(tempDir string) StorageOptionFunc {
+	return func(o *StorageOption) {
+		o.TempDir = tempDir
+	}
+}
+
+func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
 	return fx.Module("storage", fx.Provide(
 		func() StorageFacade {
-			return New(name, opts...)
+			return NewStorage(name, opts...)
 		},
 	))
 }
 
-func New(name StorageName, opts ...OptionFunc) StorageFacade {
+func NewStorage(name StorageName, opts ...StorageOptionFunc) StorageFacade {
 	pwd, _ := os.Getwd()
-	opt := &Option{
-		tempDir: pwd + "/storage/tmp",
+	opt := &StorageOption{
+		TempDir: pwd + "/storage/tmp",
 	}
 
 	for _, option := range opts {
@@ -63,7 +59,7 @@ func New(name StorageName, opts ...OptionFunc) StorageFacade {
 
 	provider, ok := providers[name]
 	if !ok {
-		log.Fatalf("Storage with %s provider not found", name)
+		log.Fatalf("[Gema] Storage with %s provider not found", name)
 		return nil
 	}
 
@@ -79,10 +75,10 @@ func withFacade(s Storage) StorageFacade {
 	return &storageFacade{s}
 }
 
-func (s *storageFacade) Use(driver StorageName, opts ...OptionFunc) Storage {
-	return New(driver, opts...)
+func (s *storageFacade) Use(driver StorageName, opts ...StorageOptionFunc) Storage {
+	return NewStorage(driver, opts...)
 }
 
-func Register(name StorageName, impl Factory) {
+func RegisterStorage(name StorageName, impl StorageFactory) {
 	providers[name] = impl
 }

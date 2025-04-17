@@ -12,9 +12,9 @@ type local struct {
 	tmpDir string
 }
 
-func createLocal(option *Option) Storage {
+func createLocal(option *StorageOption) Storage {
 	return &local{
-		tmpDir: option.tempDir,
+		tmpDir: option.TempDir,
 	}
 }
 
@@ -47,5 +47,5 @@ func (l *local) Delete(filename string) error {
 }
 
 func init() {
-	Register(LocalStorage, createLocal)
+	RegisterStorage(LocalStorage, createLocal)
 }
