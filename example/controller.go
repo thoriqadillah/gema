@@ -8,7 +8,7 @@ import (
 
 var exampleModule = fx.Module("example",
 	fx.Provide(fx.Private, newStore),
-	gema.RegisterController("example", newController),
+	gema.RegisterController(newController),
 )
 
 type exampleController struct {

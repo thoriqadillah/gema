@@ -36,8 +36,8 @@ func registerController(c Controller) {
 // RegisterController will register invoke the controller constructor
 // and register the controller to the echo instance as well as any other providers
 // that are passed in
-func RegisterController(name string, controller Constructor) fx.Option {
-	return fx.Module("controller."+name,
+func RegisterController(controller Constructor) fx.Option {
+	return fx.Module("controller",
 		fx.Provide(fx.Private, controller),
 		fx.Invoke(registerController),
 	)

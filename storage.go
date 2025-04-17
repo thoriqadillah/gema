@@ -85,7 +85,7 @@ func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
 		fx.Provide(fx.Private, func() *StorageOption {
 			return option
 		}),
-		RegisterController("storage", newStorageController),
+		RegisterController(newStorageController),
 	)
 }
 
