@@ -71,11 +71,15 @@ type TxFunc = func(ctx context.Context) error
 // inside the transaction, it will rollback the the entire transaction
 // If you are familiar with Nest js transactional cls, then this is kinda similar to that.
 // Use `gema.DB.HostDB(ctx)` to get the propagated db instance.
-func Transactional(c echo.Context, txFunc TxFunc) error {
+func Transactional(c echo.Context, txFunc TxFunc, options ...*sql.TxOptions) error {
 	ctx := c.Request().Context()
+	option := &sql.TxOptions{}
+	if len(options) > 0 {
+		option = options[0]
+	}
 
 	db := c.Get("db").(*bun.DB)
-	tx, err := db.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := db.BeginTx(ctx, option)
 	if err != nil {
 		return err
 	}
