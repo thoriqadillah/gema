@@ -13,6 +13,7 @@ import (
 	"go.uber.org/fx"
 )
 
+// DB is a wrapper for bun.DB to provide request scoped db transaction
 type DB struct {
 	*bun.DB
 }
