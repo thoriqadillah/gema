@@ -5,7 +5,7 @@ go 1.23.8
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.3
-	github.com/thoriqadillah/gema v0.0.0-20250418062507-54a42b2c49fa
+	github.com/thoriqadillah/gema v0.0.0-20250418073828-a889add38c3e
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
 )
