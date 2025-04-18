@@ -67,7 +67,8 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 
 type TxFunc = func(ctx context.Context) error
 
-// Transactional will propagate request scoped db transaction.
+// Transactional will propagate request scoped db transaction. If any error happens
+// inside the transaction, it will rollback the the entire transaction
 // If you are familiar with Nest js transactional cls, then this is kinda similar to that.
 // Use `gema.DB.HostDB(ctx)` to get the propagated db instance.
 func Transactional(c echo.Context, txFunc TxFunc) error {
