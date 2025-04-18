@@ -15,16 +15,16 @@ var workers = river.NewWorkers()
 
 type WorkerFactory func(r *river.Workers)
 
-func RegisterWorker(factory WorkerFactory) {
+func RegisterRiverWorker(factory WorkerFactory) {
 	factory(workers)
 }
 
-// MessageQueueModule is a module that provides a message queue using river
+// RiverQueueModule is a module that provides a message queue using river
 // User of this module does not need to provide the workers as it will be
 // automatically created by this module. You will only need to register your worker
 //
 // Make sure you have migrated the river schema before using this module
-func MessageQueueModule(config *river.Config) fx.Option {
+func RiverQueueModule(config *river.Config) fx.Option {
 	conf := config
 	conf.Workers = workers
 
