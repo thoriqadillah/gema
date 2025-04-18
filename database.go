@@ -56,7 +56,10 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 
 			e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 				return func(c echo.Context) error {
-					c.Set("db", bundb)
+					ctx := c.Request().Context()
+					ctx = context.WithValue(ctx, "db", bundb)
+
+					c.SetRequest(c.Request().WithContext(ctx))
 					return next(c)
 				}
 			})
@@ -72,14 +75,14 @@ type TxFunc = func(ctx context.Context) error
 // inside the transaction, it will rollback the the entire transaction
 // If you are familiar with Nest js transactional cls, then this is kinda similar to that.
 // Use `gema.DB.HostDB(ctx)` to get the propagated db instance.
-func Transactional(c echo.Context, txFunc TxFunc, options ...*sql.TxOptions) error {
-	ctx := c.Request().Context()
+func Transactional(ctx context.Context, txFunc TxFunc, options ...*sql.TxOptions) error {
+	db := ctx.Value("db").(*bun.DB)
+
 	option := &sql.TxOptions{}
 	if len(options) > 0 {
 		option = options[0]
 	}
 
-	db := c.Get("db").(*bun.DB)
 	tx, err := db.BeginTx(ctx, option)
 	if err != nil {
 		return err
