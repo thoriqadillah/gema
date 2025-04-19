@@ -21,7 +21,7 @@ type exampleController struct {
 func newController(store Store, notifier gema.NotifierFacade) gema.Controller {
 	return &exampleController{
 		store:  store,
-		mailer: notifier.Create(gema.EmailNotifier),
+		mailer: notifier.Create(gema.RiveredEmailNotifier),
 	}
 }
 

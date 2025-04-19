@@ -46,6 +46,8 @@ func DatabaseModule(dsn string) fx.Option {
 func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 	return fx.Module("database", fx.Provide(
 		func(lc fx.Lifecycle, e *echo.Echo) (*pgxpool.Pool, *DB) {
+			fmt.Println("[Gema] Registering database module")
+
 			pool, err := pgxpool.NewWithConfig(context.Background(), config)
 			if err != nil {
 				log.Fatal(err)

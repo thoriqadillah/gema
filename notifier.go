@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/fx"
 )
@@ -36,6 +37,7 @@ type Message struct {
 }
 
 type NotifierOption struct {
+	Pool  *pgxpool.Pool
 	River *river.Client[pgx.Tx]
 
 	Template *template.Template
@@ -55,6 +57,12 @@ type NotifierFactory func(o *NotifierOption) Notifier
 func withRiver(river *river.Client[pgx.Tx]) NotifierOptionFunc {
 	return func(o *NotifierOption) {
 		o.River = river
+	}
+}
+
+func withPgPool(pool *pgxpool.Pool) NotifierOptionFunc {
+	return func(o *NotifierOption) {
+		o.Pool = pool
 	}
 }
 
@@ -143,22 +151,40 @@ func newNotifierFacade(opts ...NotifierOptionFunc) NotifierFacade {
 		option(opt)
 	}
 
+	RegisterRiverWorker(func(w *river.Workers) {
+		river.AddWorker(w, &emailWorker{
+			emailer: newEmailNotifier(opt),
+		})
+	})
+
 	return &notifierFacade{option: opt}
 }
 
+// Create will create a new notifier with the given name. Note that
+// `RiveredEmailNotifier` will be usable if you have registered the river queue module
 func (n *notifierFacade) Create(name NotifierName) Notifier {
 	return newNotifier(name, n.option)
 }
 
 type notifierParams struct {
 	fx.In
+
+	Pool  *pgxpool.Pool         `optional:"true"`
 	River *river.Client[pgx.Tx] `optional:"true"`
 }
 
+// NotifierModule will provide a notifier facade that can be used to create a notifier.
+// Note that RiverdEmailNotifier will only be available
+// if you have registered the river queue module
 func NotifierModule(opts ...NotifierOptionFunc) fx.Option {
 	return fx.Module("notifier",
 		fx.Provide(func(p notifierParams) NotifierFacade {
-			opts = append(opts, withRiver(p.River))
+			opts = append(opts,
+				withRiver(p.River),
+				withPgPool(p.Pool),
+			)
+
+			fmt.Println("[Gema] Registering notifier module")
 			return newNotifierFacade(opts...)
 		}),
 	)

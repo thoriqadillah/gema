@@ -75,9 +75,10 @@ func Start(port string) fx.Option {
 						}
 					}
 
+					fmt.Println("[Gema] Echo server stoped")
 					return e.Shutdown(ctx)
 				},
 			})
-		},
-		))
+		}),
+	)
 }

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"embed"
 	"fmt"
-	"sort"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -15,25 +13,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
-
-type SortArgs struct {
-	// Strings is a slice of strings to sort.
-	Strings []string `json:"strings"`
-}
-
-func (SortArgs) Kind() string { return "sort" }
-
-type SortWorker struct {
-	// An embedded WorkerDefaults sets up default methods to fulfill the rest of
-	// the Worker interface:
-	river.WorkerDefaults[SortArgs]
-}
-
-func (w *SortWorker) Work(ctx context.Context, job *river.Job[SortArgs]) error {
-	sort.Strings(job.Args.Strings)
-	fmt.Printf("Sorted strings: %+v\n", job.Args.Strings)
-	return nil
-}
 
 //go:embed templates
 var template embed.FS
@@ -64,12 +43,12 @@ func main() {
 		gema.RiverQueueModule(&river.Config{
 			Queues: map[string]river.QueueConfig{
 				river.QueueDefault: {
+					MaxWorkers: river.QueueNumWorkersMax,
+				},
+				"notification": {
 					MaxWorkers: 100,
 				},
 			},
-			Workers: gema.RegisterRiverWorker(func(w *river.Workers) {
-				river.AddWorker(w, &SortWorker{})
-			}),
 		}),
 		gema.NotifierModule(
 			gema.WithMailerName("gema"),

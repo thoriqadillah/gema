@@ -15,6 +15,8 @@ import (
 func LoggerModule(env string, options ...zap.Option) fx.Option {
 	return fx.Module("logger", fx.Provide(
 		func(lc fx.Lifecycle) *zap.Logger {
+			fmt.Println("[Gema] Registering logger module")
+
 			var logger *zap.Logger
 			var err error
 
