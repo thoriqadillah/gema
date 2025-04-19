@@ -14,12 +14,14 @@ var exampleModule = fx.Module("example",
 )
 
 type exampleController struct {
-	store Store
+	store  Store
+	mailer gema.Notifier
 }
 
-func newController(store Store) gema.Controller {
+func newController(store Store, notifier gema.NotifierFacade) gema.Controller {
 	return &exampleController{
-		store: store,
+		store:  store,
+		mailer: notifier.Create(gema.EmailNotifier),
 	}
 }
 
@@ -28,6 +30,22 @@ func (e *exampleController) hello(c echo.Context) error {
 
 	message := e.store.Hello(ctx)
 	return c.String(200, message)
+}
+
+func (e *exampleController) notification(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	err := e.mailer.Send(ctx, gema.Message{
+		To:      []string{"hello@gema.com"},
+		Subject: "Hello World",
+		Body:    "example.html",
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return c.String(200, "email sent")
 }
 
 func (e *exampleController) transactional(c echo.Context) error {
@@ -49,4 +67,5 @@ func (e *exampleController) transactional(c echo.Context) error {
 func (e *exampleController) CreateRoutes(r *echo.Group) {
 	r.GET("/", e.hello)
 	r.GET("/transactional", e.transactional)
+	r.GET("/notification", e.notification)
 }

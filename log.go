@@ -11,6 +11,7 @@ import (
 )
 
 // LoggerModule provides a zap logger dependency
+// env is the environment, it can be "development" or "production"
 func LoggerModule(env string, options ...zap.Option) fx.Option {
 	return fx.Module("logger", fx.Provide(
 		func() *zap.Logger {

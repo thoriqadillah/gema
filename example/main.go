@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 
 	"github.com/joho/godotenv"
@@ -10,6 +11,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
+
+//go:embed templates
+var template embed.FS
 
 func httpServer(logger *zap.Logger) *echo.Echo {
 	e := echo.New()
@@ -27,9 +31,15 @@ func main() {
 		fx.Provide(httpServer),
 		gema.DecorateEcho(),
 		gema.DatabaseModule(DB_URL),
+		gema.NotifierModule(
+			gema.WithMailerName("gema"),
+			gema.WithMailerSender("hello@gema.com"),
+			gema.WithAppEnv(APP_ENV),
+			gema.WithMailerTemplateFs(template, "templates/*.html"),
+		),
 		gema.StorageModule(
 			gema.LocalStorage,
-			gema.WithUrlPath(fmt.Sprintf("http://localhost%s/storage", PORT)),
+			gema.WithStorageUrlPath(fmt.Sprintf("http://localhost%s/storage", PORT)),
 		),
 		exampleModule,
 		gema.Start(":8001"),

@@ -41,13 +41,13 @@ type StorageOption struct {
 
 type StorageFactory func(option *StorageOption) Storage
 
-var providers = map[StorageName]StorageFactory{}
+var storageProviders = map[StorageName]StorageFactory{}
 
 type StorageOptionFunc func(*StorageOption)
 
-// WithTempDir sets the temporary directory to store files.
+// WithStorageTempDir sets the temporary directory to store files.
 // Default is `pwd + "/storage/tmp"`
-func WithTempDir(tempDir string) StorageOptionFunc {
+func WithStorageTempDir(tempDir string) StorageOptionFunc {
 	return func(o *StorageOption) {
 		o.TempDir = tempDir
 	}
@@ -56,13 +56,14 @@ func WithTempDir(tempDir string) StorageOptionFunc {
 // WithRoutePath sets the route path to serve the file remotely. Please provide the full path.
 // Example: http://localhost:8000/storage.
 // Required for local storage.
-func WithUrlPath(routePath string) StorageOptionFunc {
+func WithStorageUrlPath(routePath string) StorageOptionFunc {
 	return func(o *StorageOption) {
 		o.FullRoutePath = routePath
 	}
 }
 
-func funcToOption(opts ...StorageOptionFunc) *StorageOption {
+// StorageModule is a module to provide storage service with its controller to serve local storage
+func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
 	pwd, _ := os.Getwd()
 	opt := &StorageOption{
 		TempDir: pwd + "/storage/tmp",
@@ -72,25 +73,19 @@ func funcToOption(opts ...StorageOptionFunc) *StorageOption {
 		option(opt)
 	}
 
-	return opt
-}
-
-// StorageModule is a module to provide storage service with its controller to serve local storage
-func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
-	option := funcToOption(opts...)
 	return fx.Module("storage",
 		fx.Provide(func() StorageFacade {
-			return newStorage(name, option)
+			return newStorage(name, opt)
 		}),
 		fx.Provide(fx.Private, func() *StorageOption {
-			return option
+			return opt
 		}),
 		RegisterController(newStorageController),
 	)
 }
 
 func newStorage(name StorageName, opt *StorageOption) StorageFacade {
-	provider, ok := providers[name]
+	provider, ok := storageProviders[name]
 	if !ok {
 		log.Fatalf("[Gema] Storage with %s provider not found", name)
 		return nil
@@ -109,12 +104,20 @@ func withFacade(s Storage) StorageFacade {
 }
 
 func (s *storageFacade) Use(driver StorageName, opts ...StorageOptionFunc) Storage {
-	option := funcToOption(opts...)
-	return newStorage(driver, option)
+	pwd, _ := os.Getwd()
+	opt := &StorageOption{
+		TempDir: pwd + "/storage/tmp",
+	}
+
+	for _, option := range opts {
+		option(opt)
+	}
+
+	return newStorage(driver, opt)
 }
 
 func RegisterStorage(name StorageName, impl StorageFactory) {
-	providers[name] = impl
+	storageProviders[name] = impl
 }
 
 type storageController struct {
