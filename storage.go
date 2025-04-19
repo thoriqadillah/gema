@@ -64,7 +64,6 @@ func WithStorageUrlPath(routePath string) StorageOptionFunc {
 
 // StorageModule is a module to provide storage service with its controller to serve local storage
 func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
-
 	pwd, _ := os.Getwd()
 	opt := &StorageOption{
 		TempDir: pwd + "/storage/tmp",
