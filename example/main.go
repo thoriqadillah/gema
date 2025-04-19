@@ -19,8 +19,8 @@ var template embed.FS
 
 func httpServer(logger *zap.Logger) *echo.Echo {
 	e := echo.New()
-	e.Use(gema.LoggerMiddleware(logger))
 	e.Use(middleware.Gzip())
+	e.Use(middleware.Recover())
 
 	return e
 }
@@ -30,8 +30,24 @@ func main() {
 
 	gema.RegisterValidator(map[string]validator.Func{
 		"password": func(fl validator.FieldLevel) bool {
-			// TODO
-			return true
+			password := fl.Field().String()
+			if len(password) < 6 || len(password) > 16 {
+				return false
+			}
+			hasNumber := false
+			hasAlphabet := false
+			hasSpecial := false
+			for _, char := range password {
+				switch {
+				case char >= '0' && char <= '9':
+					hasNumber = true
+				case (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z'):
+					hasAlphabet = true
+				case (char >= '!' && char <= '/') || (char >= ':' && char <= '@') || (char >= '[' && char <= '`') || (char >= '{' && char <= '~'):
+					hasSpecial = true
+				}
+			}
+			return hasNumber && hasAlphabet && hasSpecial
 		},
 	})
 
@@ -40,6 +56,7 @@ func main() {
 		gema.LoggerModule(APP_ENV),
 		fx.Provide(httpServer),
 		gema.DatabaseModule(DB_URL),
+		gema.TransactionalCls(),
 		gema.RiverQueueModule(&river.Config{
 			Queues: map[string]river.QueueConfig{
 				river.QueueDefault: {

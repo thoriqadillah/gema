@@ -10,11 +10,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// LoggerModule provides a zap logger dependency
+// LoggerModule provides a zap logger dependency and use it as echo logger
 // env is the environment, it can be "development" or "production"
 func LoggerModule(env string, options ...zap.Option) fx.Option {
 	return fx.Module("logger", fx.Provide(
-		func(lc fx.Lifecycle) *zap.Logger {
+		func(lc fx.Lifecycle, e *echo.Echo) *zap.Logger {
 			fmt.Println("[Gema] Registering logger module")
 
 			var logger *zap.Logger
@@ -29,6 +29,7 @@ func LoggerModule(env string, options ...zap.Option) fx.Option {
 				panic(err)
 			}
 
+			e.Use(loggerMiddleware(logger))
 			lc.Append(fx.StopHook(logger.Sync))
 
 			return logger
@@ -36,7 +37,7 @@ func LoggerModule(env string, options ...zap.Option) fx.Option {
 	))
 }
 
-func LoggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
+func loggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			start := time.Now()

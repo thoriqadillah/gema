@@ -73,15 +73,17 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 	))
 }
 
-func TransactionalCls(db *DB, e *echo.Echo) {
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			ctx := c.Request().Context()
-			ctx = context.WithValue(ctx, "db", db.DB)
+func TransactionalCls() fx.Option {
+	return fx.Invoke(func(db *DB, e *echo.Echo) {
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				ctx := c.Request().Context()
+				ctx = context.WithValue(ctx, "db", db.DB)
 
-			c.SetRequest(c.Request().WithContext(ctx))
-			return next(c)
-		}
+				c.SetRequest(c.Request().WithContext(ctx))
+				return next(c)
+			}
+		})
 	})
 }
 
@@ -121,27 +123,21 @@ func SeederCommand(seeders ...Seeder) CommandConstructor {
 		return &cobra.Command{
 			Use:   "seed",
 			Short: "Run the database seeder",
-			Run: func(cmd *cobra.Command, args []string) {
+			RunE: func(cmd *cobra.Command, args []string) error {
 				ctx := cmd.Context()
-				db, err := db.Begin()
-				if err != nil {
-					panic(err)
-				}
 
 				tx, err := db.Begin()
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				for _, seeder := range seeders {
 					if err := seeder.Seed(ctx, &tx); err != nil {
-						err := tx.Rollback()
-						fmt.Printf("[Gema] Seeder rolled back %T: %v\n", seeder, err)
-						return
+						return tx.Rollback()
 					}
 				}
 
-				tx.Commit()
+				return tx.Commit()
 			},
 		}
 	}
