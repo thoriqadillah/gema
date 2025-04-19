@@ -8,9 +8,8 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/riverqueue/river v0.20.2
 	github.com/spf13/cobra v1.9.1
-	github.com/thoriqadillah/gema v0.0.0-20250419090343-98a59b18be09
+	github.com/thoriqadillah/gema v0.0.0-20250419093540-f4ea19e9f767
 	go.uber.org/fx v1.23.0
-	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -51,6 +50,7 @@ require (
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
