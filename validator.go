@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/fx"
 )
 
 // to cache the validator (recommended by the docs)
@@ -60,15 +59,13 @@ func registerCustomBinder(e *echo.Echo) {
 	e.Binder = &binder{}
 }
 
-func registerValidator(registry map[string]validator.Func) fx.Option {
-	return fx.Invoke(func() {
-		for name, fn := range registry {
-			fmt.Printf("[Gema] Registering custom %s validator\n", name)
-			if err := validate.RegisterValidation(name, fn); err != nil {
-				panic(err)
-			}
+func RegisterValidator(registry map[string]validator.Func) {
+	for name, fn := range registry {
+		fmt.Printf("[Gema] Registering custom %s validator\n", name)
+		if err := validate.RegisterValidation(name, fn); err != nil {
+			panic(err)
 		}
-	})
+	}
 }
 
 func init() {

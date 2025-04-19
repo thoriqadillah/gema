@@ -14,7 +14,7 @@ import (
 // env is the environment, it can be "development" or "production"
 func LoggerModule(env string, options ...zap.Option) fx.Option {
 	return fx.Module("logger", fx.Provide(
-		func() *zap.Logger {
+		func(lc fx.Lifecycle) *zap.Logger {
 			var logger *zap.Logger
 			var err error
 
@@ -26,6 +26,8 @@ func LoggerModule(env string, options ...zap.Option) fx.Option {
 			if err != nil {
 				panic(err)
 			}
+
+			lc.Append(fx.StopHook(logger.Sync))
 
 			return logger
 		},

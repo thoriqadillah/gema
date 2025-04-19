@@ -3,6 +3,7 @@ package gema
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -44,7 +45,7 @@ func DatabaseModule(dsn string) fx.Option {
 
 func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 	return fx.Module("database", fx.Provide(
-		func(e *echo.Echo) (*pgxpool.Pool, *DB) {
+		func(lc fx.Lifecycle, e *echo.Echo) (*pgxpool.Pool, *DB) {
 			pool, err := pgxpool.NewWithConfig(context.Background(), config)
 			if err != nil {
 				log.Fatal(err)
@@ -64,6 +65,16 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 				}
 			})
 
+			lc.Append(fx.Hook{
+				OnStart: pool.Ping,
+				OnStop: func(ctx context.Context) error {
+					gemaDB.Close()
+					pool.Close()
+
+					fmt.Println("[Gema] Database connection closed")
+					return nil
+				},
+			})
 			return pool, gemaDB
 		},
 	))

@@ -52,6 +52,12 @@ type NotifierOptionFunc func(o *NotifierOption)
 
 type NotifierFactory func(o *NotifierOption) Notifier
 
+func withRiver(river *river.Client[pgx.Tx]) NotifierOptionFunc {
+	return func(o *NotifierOption) {
+		o.River = river
+	}
+}
+
 // WithAppEnv sets the environment, it can be "development" or "production"
 func WithAppEnv(env string) NotifierOptionFunc {
 	return func(o *NotifierOption) {
@@ -144,9 +150,15 @@ func (n *notifierFacade) Create(name NotifierName) Notifier {
 	return newNotifier(name, n.option)
 }
 
+type notifierParams struct {
+	fx.In
+	River *river.Client[pgx.Tx] `optional:"true"`
+}
+
 func NotifierModule(opts ...NotifierOptionFunc) fx.Option {
 	return fx.Module("notifier",
-		fx.Provide(func() NotifierFacade {
+		fx.Provide(func(p notifierParams) NotifierFacade {
+			opts = append(opts, withRiver(p.River))
 			return newNotifierFacade(opts...)
 		}),
 	)

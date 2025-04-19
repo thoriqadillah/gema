@@ -3,13 +3,9 @@ package gema
 import (
 	"context"
 	"fmt"
-	"log"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type Controller interface {
@@ -43,9 +39,14 @@ func RegisterController(controller Constructor) fx.Option {
 	)
 }
 
+// Start will start the echo server and register the controllers
+// to the echo instance. It will also create custom binder for added validation
+// and serializer for the echo instance
 func Start(port string) fx.Option {
-	return fx.Module("start", fx.Invoke(
-		func(lc fx.Lifecycle, e *echo.Echo, pool *pgxpool.Pool, logger *zap.Logger) {
+	return fx.Module("start",
+		fx.Invoke(registerCustomBinder),
+		fx.Invoke(registerCustomSerializer),
+		fx.Invoke(func(lc fx.Lifecycle, e *echo.Echo) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					for _, controller := range controllers {
@@ -62,17 +63,10 @@ func Start(port string) fx.Option {
 						}
 					}
 
-					go func() {
-						if err := e.Start(port); err != nil {
-							log.Fatal(err)
-						}
-					}()
-
-					return pool.Ping(ctx)
+					go e.Start(port)
+					return nil
 				},
 				OnStop: func(ctx context.Context) error {
-					defer logger.Sync()
-
 					for _, controller := range controllers {
 						if closer, ok := controller.(Closer); ok {
 							if err := closer.Close(ctx); err != nil {
@@ -81,26 +75,9 @@ func Start(port string) fx.Option {
 						}
 					}
 
-					pool.Close()
-					fmt.Println("[Gema] Database closed")
 					return e.Shutdown(ctx)
 				},
 			})
 		},
-	))
-}
-
-// DecorateEcho will decorate echo instance with the custom json serializer
-// and binder + struct validator with go-playground/validator
-func DecorateEcho(customValidation ...map[string]validator.Func) fx.Option {
-	validationMap := make(map[string]validator.Func)
-	if len(customValidation) > 0 {
-		validationMap = customValidation[0]
-	}
-
-	return fx.Module("echo",
-		registerValidator(validationMap),
-		fx.Invoke(registerCustomBinder),
-		fx.Invoke(registerCustomSerializer),
-	)
+		))
 }

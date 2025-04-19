@@ -13,10 +13,11 @@ import (
 
 var workers = river.NewWorkers()
 
-type WorkerFactory func(r *river.Workers)
+type WorkerFactory func(w *river.Workers)
 
-func RegisterRiverWorker(factory WorkerFactory) {
+func RegisterRiverWorker(factory WorkerFactory) *river.Workers {
 	factory(workers)
+	return workers
 }
 
 // RiverQueueModule is a module that provides a message queue using river
@@ -25,35 +26,28 @@ func RegisterRiverWorker(factory WorkerFactory) {
 //
 // Make sure you have migrated the river schema before using this module
 func RiverQueueModule(config *river.Config) fx.Option {
-	conf := config
-	conf.Workers = workers
-
-	var createQueue = func(pool *pgxpool.Pool) *river.Client[pgx.Tx] {
-		client, err := river.NewClient(riverpgxv5.New(pool), conf)
+	var createQueue = func(lc fx.Lifecycle, pool *pgxpool.Pool) *river.Client[pgx.Tx] {
+		fmt.Println("[Gema] Registering river queue")
+		client, err := river.NewClient(riverpgxv5.New(pool), config)
 		if err != nil {
 			panic(err)
 		}
 
-		return client
-	}
+		if err := client.Start(context.Background()); err != nil {
+			panic(err)
+		}
 
-	var invokeQueue = func(lc fx.Lifecycle, client *river.Client[pgx.Tx]) {
 		lc.Append(fx.Hook{
-			OnStart: func(ctx context.Context) error {
-				fmt.Println("[Gema] Starting message queue")
-				return client.Start(ctx)
-			},
 			OnStop: func(ctx context.Context) error {
 				err := client.Stop(ctx)
-				fmt.Println("[Gema] Message queue stoped")
+				fmt.Println("[Gema] River queue stoped")
 
 				return err
 			},
 		})
+
+		return client
 	}
 
-	return fx.Module("messagequeue",
-		fx.Provide(createQueue),
-		fx.Invoke(invokeQueue),
-	)
+	return fx.Module("messagequeue", fx.Provide(createQueue))
 }

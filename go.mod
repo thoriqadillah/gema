@@ -5,6 +5,7 @@ go 1.23.7
 require (
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/goccy/go-json v0.10.5
 	github.com/jackc/pgx/v5 v5.7.4
@@ -55,5 +56,6 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
