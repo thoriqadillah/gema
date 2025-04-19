@@ -11,13 +11,12 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 //go:embed templates
 var template embed.FS
 
-func httpServer(logger *zap.Logger) *echo.Echo {
+func httpServer() *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Recover())
