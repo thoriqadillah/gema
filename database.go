@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
+	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"go.uber.org/fx"
@@ -45,7 +46,7 @@ func DatabaseModule(dsn string) fx.Option {
 
 func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 	return fx.Module("database", fx.Provide(
-		func(lc fx.Lifecycle, e *echo.Echo) (*pgxpool.Pool, *DB) {
+		func(lc fx.Lifecycle) (*pgxpool.Pool, *DB) {
 			fmt.Println("[Gema] Registering database module")
 
 			pool, err := pgxpool.NewWithConfig(context.Background(), config)
@@ -56,16 +57,6 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 			sql := stdlib.OpenDBFromPool(pool)
 			bundb := bun.NewDB(sql, pgdialect.New())
 			gemaDB := &DB{bundb}
-
-			e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-				return func(c echo.Context) error {
-					ctx := c.Request().Context()
-					ctx = context.WithValue(ctx, "db", bundb)
-
-					c.SetRequest(c.Request().WithContext(ctx))
-					return next(c)
-				}
-			})
 
 			lc.Append(fx.Hook{
 				OnStart: pool.Ping,
@@ -80,6 +71,18 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 			return pool, gemaDB
 		},
 	))
+}
+
+func TransactionalCls(db *DB, e *echo.Echo) {
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := c.Request().Context()
+			ctx = context.WithValue(ctx, "db", db.DB)
+
+			c.SetRequest(c.Request().WithContext(ctx))
+			return next(c)
+		}
+	})
 }
 
 type TxFunc = func(ctx context.Context) error
@@ -107,4 +110,39 @@ func Transactional(ctx context.Context, txFunc TxFunc, options ...*sql.TxOptions
 	}
 
 	return tx.Commit()
+}
+
+type Seeder interface {
+	Seed(ctx context.Context, tx *bun.Tx) error
+}
+
+func SeederCommand(seeders ...Seeder) CommandConstructor {
+	return func(db *DB) *cobra.Command {
+		return &cobra.Command{
+			Use:   "seed",
+			Short: "Run the database seeder",
+			Run: func(cmd *cobra.Command, args []string) {
+				ctx := cmd.Context()
+				db, err := db.Begin()
+				if err != nil {
+					panic(err)
+				}
+
+				tx, err := db.Begin()
+				if err != nil {
+					panic(err)
+				}
+
+				for _, seeder := range seeders {
+					if err := seeder.Seed(ctx, &tx); err != nil {
+						err := tx.Rollback()
+						fmt.Printf("[Gema] Seeder rolled back %T: %v\n", seeder, err)
+						return
+					}
+				}
+
+				tx.Commit()
+			},
+		}
+	}
 }
