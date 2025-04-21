@@ -12,23 +12,23 @@ type Store interface {
 }
 
 type store struct {
-	db *gema.DB
+	txHost *gema.TransactionalHost
 }
 
-func newStore(db *gema.DB) Store {
-	return &store{db}
+func newStore(txHost *gema.TransactionalHost) Store {
+	return &store{txHost}
 }
 
 func (s *store) Hello(ctx context.Context) string {
-	db := s.db.HostDB(ctx)
+	db := s.txHost.Tx(ctx)
 	_ = db
 
 	// do something with db
-	return s.db.String()
+	return "Hello world"
 }
 
 func (s *store) Foo(ctx context.Context) error {
-	db := s.db.HostDB(ctx)
+	db := s.txHost.Tx(ctx)
 	_ = db
 
 	// do something with db

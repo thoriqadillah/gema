@@ -55,7 +55,7 @@ func main() {
 		gema.LoggerModule(APP_ENV),
 		fx.Provide(httpServer),
 		gema.DatabaseModule(DB_URL),
-		gema.TransactionalCls(),
+		gema.TransactionalClsModule,
 		gema.RiverQueueModule(&river.Config{
 			Queues: map[string]river.QueueConfig{
 				river.QueueDefault: {

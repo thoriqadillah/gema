@@ -12,7 +12,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func helloWorld(db *gema.DB) *cobra.Command {
+func helloWorld() *cobra.Command {
 	return &cobra.Command{
 		Use:   "hello",
 		Short: "Hello world",

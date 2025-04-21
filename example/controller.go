@@ -16,12 +16,14 @@ var exampleModule = fx.Module("example",
 type exampleController struct {
 	store  Store
 	mailer gema.Notifier
+	cls    *gema.TransactionalCls
 }
 
-func newController(store Store, notifier gema.NotifierFacade) gema.Controller {
+func newController(store Store, notifier gema.NotifierFacade, cls *gema.TransactionalCls) gema.Controller {
 	return &exampleController{
 		store:  store,
 		mailer: notifier.Create(gema.RiveredEmailNotifier),
+		cls:    cls,
 	}
 }
 
@@ -51,17 +53,15 @@ func (e *exampleController) notification(c echo.Context) error {
 func (e *exampleController) transactional(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	var message string
-	err := gema.Transactional(ctx, func(ctx context.Context) error {
-		message = e.store.Hello(ctx)
-		return e.store.Foo(ctx)
+	return e.cls.Transactional(ctx, func(ctx context.Context) error {
+		message := e.store.Hello(ctx)
+		if err := e.store.Foo(ctx); err != nil {
+			return err
+		}
+
+		return c.String(200, message)
 	})
 
-	if err != nil {
-		return err
-	}
-
-	return c.String(200, message)
 }
 
 func (e *exampleController) CreateRoutes(r *echo.Group) {

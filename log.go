@@ -13,8 +13,9 @@ import (
 // LoggerModule provides a zap logger dependency and use it as echo logger
 // env is the environment, it can be "development" or "production"
 func LoggerModule(env string, options ...zap.Option) fx.Option {
-	return fx.Module("logger", fx.Provide(
-		func(lc fx.Lifecycle, e *echo.Echo) *zap.Logger {
+	return fx.Module("logger",
+		fx.Invoke(registerLoggerMw),
+		fx.Provide(func(lc fx.Lifecycle, e *echo.Echo) *zap.Logger {
 			fmt.Println("[Gema] Registering logger module")
 
 			var logger *zap.Logger
@@ -29,12 +30,14 @@ func LoggerModule(env string, options ...zap.Option) fx.Option {
 				panic(err)
 			}
 
-			e.Use(loggerMiddleware(logger))
 			lc.Append(fx.StopHook(logger.Sync))
-
 			return logger
-		},
-	))
+		}),
+	)
+}
+
+func registerLoggerMw(logger *zap.Logger, e *echo.Echo) {
+	e.Use(loggerMiddleware(logger))
 }
 
 func loggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
