@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.3
+	github.com/pressly/goose/v3 v3.24.2
 	github.com/riverqueue/river v0.20.2
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.20.2
 	github.com/spf13/cobra v1.9.1
@@ -32,12 +33,13 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
 	github.com/riverqueue/river/riverdriver v0.20.2 // indirect
 	github.com/riverqueue/river/rivershared v0.20.2 // indirect
 	github.com/riverqueue/river/rivertype v0.20.2 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect

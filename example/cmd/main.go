@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +12,9 @@ import (
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
 )
+
+//go:embed migrations
+var migrationFs embed.FS
 
 func helloWorld() *cobra.Command {
 	return &cobra.Command{
@@ -33,8 +37,10 @@ func main() {
 		gema.DatabaseModule(DB_URL),
 		gema.CommandModule("Command line application",
 			helloWorld,
+			gema.MigrationCommand(migrationFs, "migrations"),
 			gema.SeederCommand(), // register your seeder here
 		),
 	)
+
 	app.Start(ctx)
 }
