@@ -18,5 +18,5 @@ Please see example folder for how to use any of the available utilities
 - [ ] Cache module
 - [ ] gRPC module
 - [ ] Websocket module
-- [ ] Migration module with goose
+- [x] Migration module with goose
 - [ ] Obersvability module
