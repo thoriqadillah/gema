@@ -61,11 +61,20 @@ func (e *exampleController) transactional(c echo.Context) error {
 
 		return c.String(200, message)
 	})
+}
 
+func (e *exampleController) validate(c echo.Context) error {
+	var foo foo
+	if err := c.Bind(&foo); err != nil {
+		return err
+	}
+
+	return c.JSON(200, foo)
 }
 
 func (e *exampleController) CreateRoutes(r *echo.Group) {
 	r.GET("/", e.hello)
+	r.POST("/validate", e.validate)
 	r.GET("/transactional", e.transactional)
 	r.GET("/notification", e.notification)
 }

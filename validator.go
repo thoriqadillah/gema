@@ -3,6 +3,7 @@ package gema
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -20,8 +21,22 @@ type Validator interface {
 	Validate() error
 }
 
-func ValidateStruct(i interface{}) error {
-	return validate.Struct(i)
+var validatorBaseType = reflect.TypeFor[Validate]()
+
+type Validate struct {
+	validator *validator.Validate
+	parent    interface{}
+}
+
+func newValidator(parent interface{}) *Validate {
+	return &Validate{
+		validator: validate,
+		parent:    parent,
+	}
+}
+
+func (v *Validate) Validate() error {
+	return v.validator.Struct(v.parent)
 }
 
 func translate(err error) string {
@@ -41,6 +56,23 @@ type binder struct {
 func (b *binder) Bind(i interface{}, c echo.Context) error {
 	if err := b.DefaultBinder.Bind(i, c); err != nil {
 		return err
+	}
+
+	val := reflect.ValueOf(i)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	// check if the value embeds `gema.Validate`. If yes,
+	// replace the value with `gema.Validate`
+	if val.Kind() == reflect.Struct {
+		for index := range val.NumField() {
+			firstFieldType := val.Field(index).Type()
+			if firstFieldType == validatorBaseType {
+				i = newValidator(i)
+				break
+			}
+		}
 	}
 
 	v, ok := i.(Validator)

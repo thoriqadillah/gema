@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"fmt"
-	"reflect"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -13,18 +12,6 @@ import (
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
 )
-
-type Foo struct {
-	FooField string
-}
-
-func (f *Foo) Validate() error {
-	return nil
-}
-
-type Bar struct {
-	Foo
-}
 
 //go:embed templates
 var template embed.FS
@@ -38,8 +25,6 @@ func httpServer() *echo.Echo {
 }
 
 func main() {
-	bar := reflect.TypeOf(Bar{})
-	fmt.Println("Bar struct:", bar)
 	godotenv.Load()
 
 	gema.RegisterValidator(map[string]validator.Func{
