@@ -2,7 +2,6 @@ package gema
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,7 +26,6 @@ func RegisterRiverWorker(factory WorkerFactory) {
 func RiverQueueModule(config *river.Config) fx.Option {
 	config.Workers = workers
 	var createQueue = func(lc fx.Lifecycle, pool *pgxpool.Pool) *river.Client[pgx.Tx] {
-		fmt.Println("[Gema] Registering river queue module")
 		client, err := river.NewClient(riverpgxv5.New(pool), config)
 		if err != nil {
 			panic(err)
@@ -38,10 +36,7 @@ func RiverQueueModule(config *river.Config) fx.Option {
 				return client.Start(context.Background())
 			},
 			OnStop: func(ctx context.Context) error {
-				err := client.Stop(ctx)
-				fmt.Println("[Gema] River queue stoped")
-
-				return err
+				return client.Stop(ctx)
 			},
 		})
 

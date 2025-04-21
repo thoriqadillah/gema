@@ -50,9 +50,6 @@ func Start(port string) fx.Option {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					for _, controller := range controllers {
-						name := fmt.Sprintf("%T", controller)
-						fmt.Println("[Gema] Registering controller:", name)
-
 						r := e.Group("")
 						controller.CreateRoutes(r)
 
@@ -61,6 +58,9 @@ func Start(port string) fx.Option {
 								return err
 							}
 						}
+
+						name := fmt.Sprintf("%T", controller)
+						fmt.Println("[Gema] Controller registered:", name)
 					}
 
 					go e.Start(port)
@@ -75,7 +75,6 @@ func Start(port string) fx.Option {
 						}
 					}
 
-					fmt.Println("[Gema] Echo server stoped")
 					return e.Shutdown(ctx)
 				},
 			})

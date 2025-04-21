@@ -51,7 +51,7 @@ func main() {
 	})
 
 	app := fx.New(
-		fx.NopLogger,
+		gema.FxLogger,
 		gema.LoggerModule(APP_ENV),
 		fx.Provide(httpServer),
 		gema.DatabaseModule(DB_URL),

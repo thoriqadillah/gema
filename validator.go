@@ -61,10 +61,10 @@ func registerCustomBinder(e *echo.Echo) {
 
 func RegisterValidator(registry map[string]validator.Func) {
 	for name, fn := range registry {
-		fmt.Printf("[Gema] Registering custom %s validator\n", name)
 		if err := validate.RegisterValidation(name, fn); err != nil {
 			panic(err)
 		}
+		fmt.Printf("[Gema] Custom validator registered: %s\n", name)
 	}
 }
 

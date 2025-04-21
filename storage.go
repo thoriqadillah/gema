@@ -75,7 +75,6 @@ func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
 
 	return fx.Module("storage",
 		fx.Provide(func() StorageFacade {
-			fmt.Println("[Gema] Registering storage module")
 			return newStorage(name, opt)
 		}),
 		fx.Provide(fx.Private, func() *StorageOption {

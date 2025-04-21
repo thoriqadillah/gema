@@ -184,7 +184,6 @@ func NotifierModule(opts ...NotifierOptionFunc) fx.Option {
 				withPgPool(p.Pool),
 			)
 
-			fmt.Println("[Gema] Registering notifier module")
 			return newNotifierFacade(opts...)
 		}),
 	)

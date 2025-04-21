@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -16,8 +17,6 @@ func LoggerModule(env string, options ...zap.Option) fx.Option {
 	return fx.Module("logger",
 		fx.Invoke(registerLoggerMw),
 		fx.Provide(func(lc fx.Lifecycle, e *echo.Echo) *zap.Logger {
-			fmt.Println("[Gema] Registering logger module")
-
 			var logger *zap.Logger
 			var err error
 
@@ -85,3 +84,42 @@ func loggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
 		}
 	}
 }
+
+type fxLogger struct{}
+
+func (l *fxLogger) LogEvent(event fxevent.Event) {
+	switch e := event.(type) {
+	case *fxevent.Provided:
+		l.logProvided(e)
+	case *fxevent.Supplied:
+		l.logSupplied(e)
+	case *fxevent.OnStartExecuted:
+		l.logOnStart(e)
+	case *fxevent.OnStopExecuted:
+		l.logOnStop(e)
+	}
+}
+
+func (l *fxLogger) logProvided(e *fxevent.Provided) {
+	for _, name := range e.OutputTypeNames {
+		if e.Private {
+			continue
+		}
+
+		fmt.Printf("[Gema] Provided: %s\n", name)
+	}
+}
+
+func (l *fxLogger) logSupplied(e *fxevent.Supplied) {
+	fmt.Println("[Gema] Supplied:", e.TypeName)
+}
+
+func (l *fxLogger) logOnStart(e *fxevent.OnStartExecuted) {
+	fmt.Println("[Gema] Started:", e.CallerName)
+}
+
+func (l *fxLogger) logOnStop(e *fxevent.OnStopExecuted) {
+	fmt.Println("[Gema] Stoped:", e.CallerName)
+}
+
+var FxLogger = fx.WithLogger(func() fxevent.Logger { return &fxLogger{} })
