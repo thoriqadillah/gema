@@ -23,20 +23,20 @@ type Validator interface {
 
 var validatorBaseType = reflect.TypeFor[Validate]()
 
+// Validate is a struct to be embedded in your own struct to provide the validation
+// functionality. It must be placed in the first field in your struct. This assumption
+// is made to avoid the need to check if the struct embeds `gema.Validate` or not.
+// Otherwise, you're assumed to use your own validator by implementing the `gema.Validator` interface.
 type Validate struct {
-	validator *validator.Validate
-	parent    interface{}
+	target interface{}
 }
 
-func newValidator(parent interface{}) *Validate {
-	return &Validate{
-		validator: validate,
-		parent:    parent,
-	}
+func newValidator(target interface{}) *Validate {
+	return &Validate{target}
 }
 
 func (v *Validate) Validate() error {
-	return v.validator.Struct(v.parent)
+	return validate.Struct(v.target)
 }
 
 func translate(err error) string {
@@ -63,15 +63,12 @@ func (b *binder) Bind(i interface{}, c echo.Context) error {
 		val = val.Elem()
 	}
 
-	// check if the value embeds `gema.Validate`. If yes,
-	// replace the value with `gema.Validate`
+	// Check if the value embeds `gema.Validate` in the first field.
+	// If yes, replace the value with `gema.Validate`
 	if val.Kind() == reflect.Struct {
-		for index := range val.NumField() {
-			firstFieldType := val.Field(index).Type()
-			if firstFieldType == validatorBaseType {
-				i = newValidator(i)
-				break
-			}
+		firstFieldType := val.Field(0).Type()
+		if firstFieldType == validatorBaseType {
+			i = newValidator(i)
 		}
 	}
 
