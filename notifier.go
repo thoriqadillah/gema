@@ -2,7 +2,6 @@ package gema
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"text/template"
 
@@ -53,72 +52,6 @@ type NotifierOption struct {
 type NotifierOptionFunc func(o *NotifierOption)
 
 type NotifierFactory func(o *NotifierOption) Notifier
-
-func withRiver(river *river.Client[pgx.Tx]) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.River = river
-	}
-}
-
-func withPgPool(pool *pgxpool.Pool) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Pool = pool
-	}
-}
-
-// WithAppEnv sets the environment, it can be "development" or "production"
-func WithAppEnv(env string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Env = env
-	}
-}
-
-func WithMailerName(name string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Name = name
-	}
-}
-
-func WithMailerSender(from string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.From = from
-	}
-}
-
-func WithMailerTemplateFs(templateFs embed.FS, templatePattern string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		template, err := template.ParseFS(templateFs, templatePattern)
-		if err != nil {
-			panic(err)
-		}
-
-		o.Template = template
-	}
-}
-
-func WithMailerPassword(password string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Password = password
-	}
-}
-
-func WithMailerUsername(username string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Username = username
-	}
-}
-
-func WithMailerHost(host string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Host = host
-	}
-}
-
-func WithMailerPort(port int) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Port = port
-	}
-}
 
 var notifierProviders = map[NotifierName]NotifierFactory{}
 

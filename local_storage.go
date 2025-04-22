@@ -9,6 +9,23 @@ import (
 
 const LocalStorage StorageName = "local"
 
+// WithStorageTempDir sets the temporary directory to store files.
+// Default is `pwd + "/storage/tmp"`
+func WithStorageTempDir(tempDir string) StorageOptionFunc {
+	return func(o *StorageOption) {
+		o.TempDir = tempDir
+	}
+}
+
+// WithRoutePath sets the route path to serve the file remotely. Please provide the full path.
+// Example: http://localhost:8000/storage.
+// Required for local storage.
+func WithStorageUrlPath(routePath string) StorageOptionFunc {
+	return func(o *StorageOption) {
+		o.FullRoutePath = routePath
+	}
+}
+
 type localStorage struct {
 	tmpDir        string
 	fullRoutePath string

@@ -10,6 +10,18 @@ import (
 
 const RiveredEmailNotifier NotifierName = "riveredemail"
 
+func withRiver(river *river.Client[pgx.Tx]) NotifierOptionFunc {
+	return func(o *NotifierOption) {
+		o.River = river
+	}
+}
+
+func withPgPool(pool *pgxpool.Pool) NotifierOptionFunc {
+	return func(o *NotifierOption) {
+		o.Pool = pool
+	}
+}
+
 type RiveredEmailer struct {
 	river *river.Client[pgx.Tx]
 	pool  *pgxpool.Pool

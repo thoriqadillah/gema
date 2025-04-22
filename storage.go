@@ -45,23 +45,6 @@ var storageProviders = map[StorageName]StorageFactory{}
 
 type StorageOptionFunc func(*StorageOption)
 
-// WithStorageTempDir sets the temporary directory to store files.
-// Default is `pwd + "/storage/tmp"`
-func WithStorageTempDir(tempDir string) StorageOptionFunc {
-	return func(o *StorageOption) {
-		o.TempDir = tempDir
-	}
-}
-
-// WithRoutePath sets the route path to serve the file remotely. Please provide the full path.
-// Example: http://localhost:8000/storage.
-// Required for local storage.
-func WithStorageUrlPath(routePath string) StorageOptionFunc {
-	return func(o *StorageOption) {
-		o.FullRoutePath = routePath
-	}
-}
-
 // StorageModule is a module to provide storage service with its controller to serve local storage
 func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
 	pwd, _ := os.Getwd()
