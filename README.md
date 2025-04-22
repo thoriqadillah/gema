@@ -6,7 +6,7 @@ Gema is a simplified version of [Echo](https://echo.labstack.com/) http framewor
 - Transactional CLS module to propagate tx instance in request scope. It's almost the same with [Nest.js transactional CLS](https://papooch.github.io/nestjs-cls/plugins/available-plugins/transactional) module if you are familiar with it
 - Seeding command with the capability to register your seeder
 - Migration command with [goose](https://github.com/pressly/goose)
-- Storage module. Currently only local storage using your file system. Suitable for local development. But you register your own storage like S3, Google Cloud Storage, etc
+- Storage module. Currently only local storage using your file system. Suitable for local development. But you can register your own storage like S3, Google Cloud Storage, etc
 - Message queue using [river queue](https://riverqueue.com/)
 - Notifier module, like email notification. Currently only email notification is available. If you are using the river queue module, email sending with `RiveredEmailNotifier` name can be use to send the email using river queue. But you can register your own notifier
 - Easier validation with `gema.Validator` interface and `gema.Validate` to validate your struct after struct binding
@@ -18,5 +18,7 @@ Please see example folder for how to use any of the available utilities
 ## Next
 - [ ] Cache module
 - [ ] gRPC module
+- [ ] Auth
+- [ ] RBAC
 - [ ] Websocket module
 - [ ] Obersvability module
