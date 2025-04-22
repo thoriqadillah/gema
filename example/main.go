@@ -72,10 +72,20 @@ func main() {
 			gema.WithAppEnv(APP_ENV),
 			gema.WithMailerTemplateFs(template, "templates/*.html"),
 		),
+		// TODO: refactor notifier like this
+		// gema.NotifierModule(
+		// 	gema.EmailNotifier(option),
+		// 	gema.RiveredEmailNotifier(option),
+		// ),
 		gema.StorageModule(
 			gema.LocalStorage,
 			gema.WithStorageUrlPath(fmt.Sprintf("http://localhost%s/storage", PORT)),
 		),
+		// TODO: refactor storage like this
+		// gema.StorageModule(
+		// 	gema.LocalStorage(option),
+		// 	gema.S3Storage(option),
+		// ),
 		exampleModule,
 		gema.Start(":8001"),
 	)
