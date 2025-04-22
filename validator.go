@@ -65,7 +65,7 @@ func (b *binder) Bind(i interface{}, c echo.Context) error {
 
 	// Check if the value embeds `gema.Validate` in the first field.
 	// If yes, replace the value with `gema.Validate`
-	if val.Kind() == reflect.Struct {
+	if val.Kind() == reflect.Struct && val.NumField() > 0 {
 		firstFieldType := val.Field(0).Type()
 		if firstFieldType == validatorBaseType {
 			i = newValidator(i)
