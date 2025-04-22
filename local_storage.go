@@ -3,8 +3,14 @@ package gema
 import (
 	"fmt"
 	"io"
+	"log"
+	"mime"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/labstack/echo/v4"
 )
 
 const LocalStorage StorageName = "local"
@@ -65,6 +71,42 @@ func (l *localStorage) Upload(filename string, src io.Reader) (string, error) {
 
 func (l *localStorage) Delete(filename string) error {
 	return os.Remove(l.tmpDir + "/" + filename)
+}
+
+type storageController struct {
+	storage   StorageFacade
+	routePath string
+}
+
+func newStorageController(option *StorageOption, storage StorageFacade) Controller {
+	url, err := url.Parse(option.FullRoutePath)
+	if err != nil {
+		log.Fatalf("[Gema] Invalid route path %s", option.FullRoutePath)
+	}
+
+	return &storageController{
+		storage:   storage,
+		routePath: url.Path,
+	}
+}
+
+func (s *storageController) serve(c echo.Context) error {
+	filename := c.Param("filename")
+	ext := filepath.Ext(filename)
+	mimetype := mime.TypeByExtension(ext)
+
+	file, err := s.storage.Serve(filename)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("File %s not found", filename))
+	}
+	defer file.Close()
+
+	return c.Stream(http.StatusOK, mimetype, file)
+}
+
+func (s *storageController) CreateRoutes(r *echo.Group) {
+	path := fmt.Sprintf("%s/:filename", s.routePath)
+	r.GET(path, s.serve)
 }
 
 func init() {
