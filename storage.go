@@ -74,7 +74,9 @@ func StorageModule(providers ...StorageProvider) fx.Option {
 			storageFx = append(storageFx, storageModule)
 		}
 
-		fxOptions = append(fxOptions, fx.Module("storage.provider", storageFx...))
+		if len(storageFx) > 0 {
+			fxOptions = append(fxOptions, fx.Module("storage.provider", storageFx...))
+		}
 	}
 
 	fxOptions = append(fxOptions, fx.Provide(func() StorageFactory {
