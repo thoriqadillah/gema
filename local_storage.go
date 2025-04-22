@@ -11,47 +11,34 @@ import (
 	"path/filepath"
 
 	"github.com/labstack/echo/v4"
+	"go.uber.org/fx"
 )
 
-const LocalStorage StorageName = "local"
+const LocalStorageName StorageName = "local"
 
-// WithStorageTempDir sets the temporary directory to store files.
-// Default is `pwd + "/storage/tmp"`
-func WithStorageTempDir(tempDir string) StorageOptionFunc {
-	return func(o *StorageOption) {
-		o.TempDir = tempDir
-	}
-}
-
-// WithRoutePath sets the route path to serve the file remotely. Please provide the full path.
-// Example: http://localhost:8000/storage.
-// Required for local storage.
-func WithStorageUrlPath(routePath string) StorageOptionFunc {
-	return func(o *StorageOption) {
-		o.FullRoutePath = routePath
-	}
+type LocalStorageOption struct {
+	TempDir       string
+	FullRoutePath string
 }
 
 type localStorage struct {
-	tmpDir        string
-	fullRoutePath string
+	opt *LocalStorageOption
 }
 
-func createLocalStorage(option *StorageOption) Storage {
+func newLocalStorage(opt *LocalStorageOption) *localStorage {
 	return &localStorage{
-		tmpDir:        option.TempDir,
-		fullRoutePath: option.FullRoutePath,
+		opt: opt,
 	}
 }
 
 func (l *localStorage) Serve(filename string) (io.ReadCloser, error) {
-	return os.Open(l.tmpDir + "/" + filename)
+	return os.Open(l.opt.TempDir + "/" + filename)
 }
 
 func (l *localStorage) Upload(filename string, src io.Reader) (string, error) {
-	file := filepath.Join(l.tmpDir, filename)
+	file := filepath.Join(l.opt.TempDir, filename)
 
-	if err := os.MkdirAll(l.tmpDir, 0755); err != nil {
+	if err := os.MkdirAll(l.opt.TempDir, 0755); err != nil {
 		return "", err
 	}
 
@@ -65,23 +52,23 @@ func (l *localStorage) Upload(filename string, src io.Reader) (string, error) {
 		return "", err
 	}
 
-	path := fmt.Sprintf("%s/%s", l.fullRoutePath, filename)
+	path := fmt.Sprintf("%s/%s", l.opt.FullRoutePath, filename)
 	return path, nil
 }
 
 func (l *localStorage) Delete(filename string) error {
-	return os.Remove(l.tmpDir + "/" + filename)
+	return os.Remove(l.opt.TempDir + "/" + filename)
 }
 
 type storageController struct {
-	storage   StorageFacade
+	storage   Storage
 	routePath string
 }
 
-func newStorageController(option *StorageOption, storage StorageFacade) Controller {
-	url, err := url.Parse(option.FullRoutePath)
+func newStorageController(opt *LocalStorageOption, storage Storage) Controller {
+	url, err := url.Parse(opt.FullRoutePath)
 	if err != nil {
-		log.Fatalf("[Gema] Invalid route path %s", option.FullRoutePath)
+		log.Fatalf("[Gema] Invalid route path %s", opt.FullRoutePath)
 	}
 
 	return &storageController{
@@ -109,6 +96,30 @@ func (s *storageController) CreateRoutes(r *echo.Group) {
 	r.GET(path, s.serve)
 }
 
-func init() {
-	RegisterStorage(LocalStorage, createLocalStorage)
+type localStorageProvider struct {
+	opt *LocalStorageOption
+}
+
+func LocalStorageProvider(opt *LocalStorageOption) StorageProvider {
+	return &localStorageProvider{opt}
+}
+
+func (l *localStorageProvider) Register(registry StorageRegistry) fx.Option {
+	return fx.Provide(fx.Private, func() Storage {
+		storage := newLocalStorage(l.opt)
+		registry.Register(LocalStorageName, storage)
+
+		return storage
+	})
+}
+
+func (l *localStorageProvider) provideOption() *LocalStorageOption {
+	return l.opt
+}
+
+func (l *localStorageProvider) Module() fx.Option {
+	return fx.Module("storage.controller",
+		fx.Provide(fx.Private, l.provideOption),
+		RegisterController(newStorageController),
+	)
 }

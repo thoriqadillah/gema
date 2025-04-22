@@ -3,7 +3,6 @@ package gema
 import (
 	"io"
 	"log"
-	"os"
 
 	"go.uber.org/fx"
 )
@@ -18,81 +17,69 @@ type Storage interface {
 	Delete(filename string) error
 }
 
-type StorageFacade interface {
-	Storage
-	Use(driver StorageName, opts ...StorageOptionFunc) Storage
+type StorageFactory interface {
+	// Disk will return the storage implementation
+	Disk(driver StorageName) Storage
 }
 
-type StorageOption struct {
-	// The directory to store temporary files for local storage.
-	// Default is `pwd + "/storage/tmp"`
-	TempDir string
+type StorageRegistry map[StorageName]Storage
 
-	// The route path to serve the file removetly
-	// Default is `/storage/:filename`
-	FullRoutePath string
+func (s StorageRegistry) Register(name StorageName, storage Storage) {
+	s[name] = storage
 }
 
-type StorageFactory func(option *StorageOption) Storage
+type StorageProvider interface {
+	// Register will be used to register the storage implementation to the registry
+	// and perform necessary operation along the way. Register must provide the storage implementation
+	// privately if you want it to be injected and be reusable inside the Module. Otherwise return nil
+	Register(registry StorageRegistry) fx.Option
 
-var storageProviders = map[StorageName]StorageFactory{}
-
-type StorageOptionFunc func(*StorageOption)
-
-// StorageModule is a module to provide storage service with its controller to serve local storage
-func StorageModule(name StorageName, opts ...StorageOptionFunc) fx.Option {
-	pwd, _ := os.Getwd()
-	opt := &StorageOption{
-		TempDir: pwd + "/storage/tmp",
-	}
-
-	for _, option := range opts {
-		option(opt)
-	}
-
-	return fx.Module("storage",
-		fx.Provide(func() StorageFacade {
-			return newStorage(name, opt)
-		}),
-		fx.Provide(fx.Private, func() *StorageOption {
-			return opt
-		}),
-		RegisterController(newStorageController),
-	)
+	// Module will be used to provide additional dependencies
+	// to the storage register and the whole app. Return nil if you don't want to provide anything
+	Module() fx.Option
 }
 
-func newStorage(name StorageName, opt *StorageOption) StorageFacade {
-	provider, ok := storageProviders[name]
+type storageFactory struct {
+	registry StorageRegistry
+}
+
+func createStorage(s StorageRegistry) StorageFactory {
+	return &storageFactory{s}
+}
+
+func (s *storageFactory) Disk(driver StorageName) Storage {
+	storage, ok := s.registry[driver]
 	if !ok {
-		log.Fatalf("[Gema] Storage with %s provider not found", name)
+		log.Fatalf("[Gema] Storage with %s provider not found", driver)
 		return nil
 	}
 
-	storage := provider(opt)
-	return withFacade(storage)
+	return storage
 }
 
-type storageFacade struct {
-	Storage
-}
+// StorageModule is a module that will register the storage provider
+// and provide the storage factory to the app.
+// The storage provider must implement the StorageProvider interface
+func StorageModule(providers ...StorageProvider) fx.Option {
+	storageMap := StorageRegistry{}
 
-func withFacade(s Storage) StorageFacade {
-	return &storageFacade{s}
-}
+	fxOptions := make([]fx.Option, 0)
+	for _, provider := range providers {
+		storageFx := []fx.Option{}
+		if registry := provider.Register(storageMap); registry != nil {
+			storageFx = append(storageFx, registry)
+		}
 
-func (s *storageFacade) Use(driver StorageName, opts ...StorageOptionFunc) Storage {
-	pwd, _ := os.Getwd()
-	opt := &StorageOption{
-		TempDir: pwd + "/storage/tmp",
+		if storageModule := provider.Module(); storageModule != nil {
+			storageFx = append(storageFx, storageModule)
+		}
+
+		fxOptions = append(fxOptions, fx.Module("storage.provider", storageFx...))
 	}
 
-	for _, option := range opts {
-		option(opt)
-	}
+	fxOptions = append(fxOptions, fx.Provide(func() StorageFactory {
+		return createStorage(storageMap)
+	}))
 
-	return newStorage(driver, opt)
-}
-
-func RegisterStorage(name StorageName, impl StorageFactory) {
-	storageProviders[name] = impl
+	return fx.Module("storage", fxOptions...)
 }

@@ -78,14 +78,11 @@ func main() {
 		// 	gema.RiveredEmailNotifier(option),
 		// ),
 		gema.StorageModule(
-			gema.LocalStorage,
-			gema.WithStorageUrlPath(fmt.Sprintf("http://localhost%s/storage", PORT)),
+			gema.LocalStorageProvider(&gema.LocalStorageOption{
+				TempDir:       "./storage",
+				FullRoutePath: fmt.Sprintf("http://localhost%s/storage", PORT),
+			}),
 		),
-		// TODO: refactor storage like this
-		// gema.StorageModule(
-		// 	gema.LocalStorage(option),
-		// 	gema.S3Storage(option),
-		// ),
 		exampleModule,
 		gema.Start(":8001"),
 	)
