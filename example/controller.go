@@ -24,15 +24,15 @@ type exampleController struct {
 
 func newController(
 	store Store,
-	notifier gema.NotifierFactory,
 	cls *gema.TransactionalCls,
 	storageFactory gema.StorageFactory,
+	notifierFactory gema.NotifierFactory,
 ) gema.Controller {
 	return &exampleController{
-		store:   store,
-		mailer:  notifier.Create(gema.RiveredEmailNotifier),
 		cls:     cls,
+		store:   store,
 		storage: storageFactory.Disk(gema.LocalStorage),
+		mailer:  notifierFactory.Create(gema.RiveredEmailNotifier),
 	}
 }
 
