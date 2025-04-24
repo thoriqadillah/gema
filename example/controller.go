@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
@@ -14,16 +16,23 @@ var exampleModule = fx.Module("example",
 )
 
 type exampleController struct {
-	store  Store
-	mailer gema.Notifier
-	cls    *gema.TransactionalCls
+	store   Store
+	mailer  gema.Notifier
+	cls     *gema.TransactionalCls
+	storage gema.Storage
 }
 
-func newController(store Store, notifier gema.NotifierFacade, cls *gema.TransactionalCls) gema.Controller {
+func newController(
+	store Store,
+	notifier gema.NotifierFacade,
+	cls *gema.TransactionalCls,
+	storageFactory gema.StorageFactory,
+) gema.Controller {
 	return &exampleController{
-		store:  store,
-		mailer: notifier.Create(gema.RiveredEmailNotifier),
-		cls:    cls,
+		store:   store,
+		mailer:  notifier.Create(gema.RiveredEmailNotifier),
+		cls:     cls,
+		storage: storageFactory.Disk(gema.LocalStorage),
 	}
 }
 
@@ -72,9 +81,37 @@ func (e *exampleController) validate(c echo.Context) error {
 	return c.JSON(200, foo)
 }
 
+func (e *exampleController) upload(c echo.Context) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return err
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	ext := filepath.Ext(file.Filename)
+	id := uuid.NewString()
+	filename := id + ext
+
+	url, err := e.storage.Upload(filename, f)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(200, echo.Map{
+		"url": url,
+	})
+}
+
 func (e *exampleController) CreateRoutes(r *echo.Group) {
 	r.GET("/", e.hello)
 	r.POST("/validate", e.validate)
+	r.POST("/upload", e.upload)
 	r.GET("/transactional", e.transactional)
 	r.GET("/notification", e.notification)
 }

@@ -84,7 +84,7 @@ func main() {
 			}),
 		),
 		exampleModule,
-		gema.Start(":8001"),
+		gema.Start(PORT),
 	)
 
 	app.Run()

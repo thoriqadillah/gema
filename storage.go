@@ -29,14 +29,11 @@ func (s StorageRegistry) Register(name StorageName, storage Storage) {
 }
 
 type StorageProvider interface {
-	// Register will be used to register the storage implementation to the registry
-	// and perform necessary operation along the way. Register must provide the storage implementation
-	// privately if you want it to be injected and be reusable inside the Module. Otherwise return nil
-	Register(registry StorageRegistry) fx.Option
-
-	// Module will be used to provide additional dependencies
-	// to the storage register and the whole app. Return nil if you don't want to provide anything
-	Module() fx.Option
+	// Register will be used to register your storage implementation and returns your storage module.
+	// In the register, you will be provided with the storage registry to register your storage implementation.
+	// Register must return your storage module with fx.Option. But remember to make your storage
+	// implementation private. Otherwise, it will collide with other storage implementations
+	Register() fx.Option
 }
 
 type storageFactory struct {
@@ -63,25 +60,17 @@ func (s *storageFactory) Disk(driver StorageName) Storage {
 func StorageModule(providers ...StorageProvider) fx.Option {
 	storageMap := StorageRegistry{}
 
-	fxOptions := make([]fx.Option, 0)
-	for _, provider := range providers {
-		storageFx := []fx.Option{}
-		if registry := provider.Register(storageMap); registry != nil {
-			storageFx = append(storageFx, registry)
-		}
-
-		if storageModule := provider.Module(); storageModule != nil {
-			storageFx = append(storageFx, storageModule)
-		}
-
-		if len(storageFx) > 0 {
-			fxOptions = append(fxOptions, fx.Module("storage.provider", storageFx...))
-		}
+	fxOptions := []fx.Option{
+		fx.Provide(fx.Private, func() StorageRegistry {
+			return storageMap
+		}),
 	}
 
-	fxOptions = append(fxOptions, fx.Provide(func() StorageFactory {
-		return createStorage(storageMap)
-	}))
+	for _, provider := range providers {
+		fxOptions = append(fxOptions, provider.Register())
+	}
+
+	fxOptions = append(fxOptions, fx.Provide(createStorage))
 
 	return fx.Module("storage", fxOptions...)
 }

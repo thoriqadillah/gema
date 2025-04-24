@@ -14,7 +14,7 @@ import (
 	"go.uber.org/fx"
 )
 
-const LocalStorageName StorageName = "local"
+const LocalStorage StorageName = "local"
 
 type LocalStorageOption struct {
 	TempDir       string
@@ -104,22 +104,21 @@ func LocalStorageProvider(opt *LocalStorageOption) StorageProvider {
 	return &localStorageProvider{opt}
 }
 
-func (l *localStorageProvider) Register(registry StorageRegistry) fx.Option {
-	return fx.Provide(fx.Private, func() Storage {
-		storage := newLocalStorage(l.opt)
-		registry.Register(LocalStorageName, storage)
+func (l *localStorageProvider) provideStorage(registry StorageRegistry) Storage {
+	storage := newLocalStorage(l.opt)
+	registry.Register(LocalStorage, storage)
 
-		return storage
-	})
+	return storage
+}
+
+func (l *localStorageProvider) Register() fx.Option {
+	return fx.Module("storage.local",
+		fx.Provide(fx.Private, l.provideOption),
+		fx.Provide(fx.Private, l.provideStorage),
+		RegisterController(newStorageController),
+	)
 }
 
 func (l *localStorageProvider) provideOption() *LocalStorageOption {
 	return l.opt
-}
-
-func (l *localStorageProvider) Module() fx.Option {
-	return fx.Module("storage.controller",
-		fx.Provide(fx.Private, l.provideOption),
-		RegisterController(newStorageController),
-	)
 }
