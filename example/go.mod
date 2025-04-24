@@ -4,11 +4,12 @@ go 1.23.8
 
 require (
 	github.com/go-playground/validator/v10 v10.26.0
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/riverqueue/river v0.20.2
 	github.com/spf13/cobra v1.9.1
-	github.com/thoriqadillah/gema v0.0.0-20250422111300-bec05e65985e
+	github.com/thoriqadillah/gema v0.0.0-20250424011858-3ba2fe50c9b3
 	go.uber.org/fx v1.23.0
 )
 
