@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"fmt"
+	"html/template"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -14,7 +15,16 @@ import (
 )
 
 //go:embed templates
-var template embed.FS
+var templateFs embed.FS
+
+func emailTemplate() *template.Template {
+	tmpl, err := template.ParseFS(templateFs, "templates/*.html")
+	if err != nil {
+		panic(err)
+	}
+
+	return tmpl
+}
 
 func httpServer() *echo.Echo {
 	e := echo.New()
@@ -67,16 +77,15 @@ func main() {
 			},
 		}),
 		gema.NotifierModule(
-			gema.WithMailerName("gema"),
-			gema.WithMailerSender("hello@gema.com"),
-			gema.WithAppEnv(APP_ENV),
-			gema.WithMailerTemplateFs(template, "templates/*.html"),
+			gema.EmailerProvider(&gema.EmailerOption{
+				Env:      APP_ENV,
+				Template: emailTemplate(),
+			}),
+			gema.RiveredEmailProvider(&gema.EmailerOption{
+				Env:      APP_ENV,
+				Template: emailTemplate(),
+			}),
 		),
-		// TODO: refactor notifier like this
-		// gema.NotifierModule(
-		// 	gema.EmailNotifier(option),
-		// 	gema.RiveredEmailNotifier(option),
-		// ),
 		gema.StorageModule(
 			gema.LocalStorageProvider(&gema.LocalStorageOption{
 				TempDir:       "./storage",

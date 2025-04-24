@@ -3,85 +3,36 @@ package gema
 import (
 	"bytes"
 	"context"
-	"embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"path/filepath"
-	"text/template"
 
+	"go.uber.org/fx"
 	"gopkg.in/gomail.v2"
 )
 
 const EmailNotifier NotifierName = "email"
 
-// WithAppEnv sets the environment, it can be "development" or "production"
-func WithAppEnv(env string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Env = env
-	}
+type EmailerOption struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
+	Name     string
+	Env      string
+	Template *template.Template
 }
 
-func WithMailerName(name string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Name = name
-	}
+type emailer struct {
+	opt    *EmailerOption
+	mailer *gomail.Dialer
 }
 
-func WithMailerSender(from string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.From = from
-	}
-}
-
-func WithMailerTemplateFs(templateFs embed.FS, templatePattern string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		template, err := template.ParseFS(templateFs, templatePattern)
-		if err != nil {
-			panic(err)
-		}
-
-		o.Template = template
-	}
-}
-
-func WithMailerPassword(password string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Password = password
-	}
-}
-
-func WithMailerUsername(username string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Username = username
-	}
-}
-
-func WithMailerHost(host string) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Host = host
-	}
-}
-
-func WithMailerPort(port int) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Port = port
-	}
-}
-
-type Emailer struct {
-	template *template.Template
-	mailer   *gomail.Dialer
-	from     string
-	name     string
-	env      string
-}
-
-func newEmailNotifier(o *NotifierOption) Notifier {
-	return &Emailer{
-		template: o.Template,
-		env:      o.Env,
-		from:     o.From,
-		name:     o.Name,
+func newEmailNotifier(o *EmailerOption) Notifier {
+	return &emailer{
+		opt: o,
 		mailer: gomail.NewDialer(
 			o.Host,
 			o.Port,
@@ -91,8 +42,8 @@ func newEmailNotifier(o *NotifierOption) Notifier {
 	}
 }
 
-func (e *Emailer) Send(ctx context.Context, m Message) error {
-	if e.env == "development" {
+func (e *emailer) Send(ctx context.Context, m Message) error {
+	if e.opt.Env == "development" {
 		b, err := json.MarshalIndent(m, "", "  ")
 		if err != nil {
 			return err
@@ -109,7 +60,7 @@ func (e *Emailer) Send(ctx context.Context, m Message) error {
 	if ext == ".html" {
 		mimetype = "text/html"
 		var buff bytes.Buffer
-		if err := e.template.ExecuteTemplate(&buff, m.Body, m.Data); err != nil {
+		if err := e.opt.Template.ExecuteTemplate(&buff, m.Body, m.Data); err != nil {
 			return err
 		}
 
@@ -118,7 +69,7 @@ func (e *Emailer) Send(ctx context.Context, m Message) error {
 
 	from := m.From
 	if from == "" {
-		from = fmt.Sprintf("%s <%s>", e.name, e.from)
+		from = fmt.Sprintf("%s <%s>", e.opt.Name, e.opt.From)
 	}
 
 	message := gomail.NewMessage()
@@ -132,6 +83,21 @@ func (e *Emailer) Send(ctx context.Context, m Message) error {
 	return e.mailer.DialAndSend(message)
 }
 
-func init() {
-	RegisterNotifier(EmailNotifier, newEmailNotifier)
+type emailerProvider struct {
+	opt *EmailerOption
+}
+
+func EmailerProvider(opt *EmailerOption) NotifierProvider {
+	return &emailerProvider{
+		opt: opt,
+	}
+}
+
+func (e *emailerProvider) registerEmailer(registry NotifierRegistry) {
+	notifier := newEmailNotifier(e.opt)
+	registry.Register(EmailNotifier, notifier)
+}
+
+func (e *emailerProvider) Register() fx.Option {
+	return fx.Module("notifier.email", fx.Invoke(e.registerEmailer))
 }

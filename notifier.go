@@ -2,12 +2,8 @@ package gema
 
 import (
 	"context"
-	"fmt"
-	"text/template"
+	"log"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/riverqueue/river"
 	"go.uber.org/fx"
 )
 
@@ -35,89 +31,56 @@ type Message struct {
 	Cc   []string
 }
 
-type NotifierOption struct {
-	Pool  *pgxpool.Pool
-	River *river.Client[pgx.Tx]
+type NotifierRegistry map[NotifierName]Notifier
 
-	Template *template.Template
-	Password string
-	Username string
-	Host     string
-	Port     int
-	Env      string
-	From     string
-	Name     string
+func (s NotifierRegistry) Register(name NotifierName, notifier Notifier) {
+	s[name] = notifier
 }
 
-type NotifierOptionFunc func(o *NotifierOption)
-
-type NotifierFactory func(o *NotifierOption) Notifier
-
-var notifierProviders = map[NotifierName]NotifierFactory{}
-
-// register will register the implementation of the notifier as the provider
-func RegisterNotifier(name NotifierName, impl NotifierFactory) {
-	notifierProviders[name] = impl
+type NotifierProvider interface {
+	// Register will be used to register your notifier implementation and returns your notifier module.
+	// In the register, you will be provided with the notifier registry to register your notifier implementation.
+	// Register must return your notifier module with fx.Option. But remember to make your notifier
+	// implementation private. Otherwise, it will collide with other notifier implementations
+	Register() fx.Option
 }
 
-func newNotifier(name NotifierName, opt *NotifierOption) Notifier {
-	provider, ok := notifierProviders[name]
+type NotifierFactory interface {
+	Create(driver NotifierName) Notifier
+}
+
+type notifierFactory struct {
+	registry NotifierRegistry
+}
+
+func createNotifier(s NotifierRegistry) NotifierFactory {
+	return &notifierFactory{s}
+}
+
+func (s *notifierFactory) Create(driver NotifierName) Notifier {
+	notifier, ok := s.registry[driver]
 	if !ok {
-		panic(fmt.Sprintf("Notifier with %s provider not found", name))
+		log.Fatalf("[Gema] Notifier with %s provider not found", driver)
+		return nil
 	}
 
-	return provider(opt)
+	return notifier
 }
 
-type NotifierFacade interface {
-	Create(name NotifierName) Notifier
-}
+func NotifierModule(providers ...NotifierProvider) fx.Option {
+	notifierMap := NotifierRegistry{}
 
-type notifierFacade struct {
-	option *NotifierOption
-}
-
-func newNotifierFacade(opts ...NotifierOptionFunc) NotifierFacade {
-	opt := &NotifierOption{}
-
-	for _, option := range opts {
-		option(opt)
-	}
-
-	RegisterRiverWorker(func(w *river.Workers) {
-		river.AddWorker(w, &emailWorker{
-			emailer: newEmailNotifier(opt),
-		})
-	})
-
-	return &notifierFacade{option: opt}
-}
-
-// Create will create a new notifier with the given name. Note that
-// `RiveredEmailNotifier` will be usable if you have registered the river queue module
-func (n *notifierFacade) Create(name NotifierName) Notifier {
-	return newNotifier(name, n.option)
-}
-
-type notifierParams struct {
-	fx.In
-
-	Pool  *pgxpool.Pool         `optional:"true"`
-	River *river.Client[pgx.Tx] `optional:"true"`
-}
-
-// NotifierModule will provide a notifier facade that can be used to create a notifier.
-// Note that RiverdEmailNotifier will only be available
-// if you have registered the river queue module
-func NotifierModule(opts ...NotifierOptionFunc) fx.Option {
-	return fx.Module("notifier",
-		fx.Provide(func(p notifierParams) NotifierFacade {
-			opts = append(opts,
-				withRiver(p.River),
-				withPgPool(p.Pool),
-			)
-
-			return newNotifierFacade(opts...)
+	fxOptions := []fx.Option{
+		fx.Provide(fx.Private, func() NotifierRegistry {
+			return notifierMap
 		}),
-	)
+	}
+
+	for _, provider := range providers {
+		fxOptions = append(fxOptions, provider.Register())
+	}
+
+	fxOptions = append(fxOptions, fx.Provide(createNotifier))
+
+	return fx.Module("notifier", fxOptions...)
 }

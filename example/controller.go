@@ -24,7 +24,7 @@ type exampleController struct {
 
 func newController(
 	store Store,
-	notifier gema.NotifierFacade,
+	notifier gema.NotifierFactory,
 	cls *gema.TransactionalCls,
 	storageFactory gema.StorageFactory,
 ) gema.Controller {

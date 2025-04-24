@@ -6,23 +6,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
+	"go.uber.org/fx"
 )
 
 const RiveredEmailNotifier NotifierName = "riveredemail"
 
-func withRiver(river *river.Client[pgx.Tx]) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.River = river
-	}
-}
-
-func withPgPool(pool *pgxpool.Pool) NotifierOptionFunc {
-	return func(o *NotifierOption) {
-		o.Pool = pool
-	}
-}
-
-type RiveredEmailer struct {
+type riveredEmailer struct {
 	river *river.Client[pgx.Tx]
 	pool  *pgxpool.Pool
 }
@@ -35,14 +24,14 @@ func (emailArg) Kind() string {
 	return "email"
 }
 
-func createRiveredEmailer(o *NotifierOption) Notifier {
-	return &RiveredEmailer{
-		river: o.River,
-		pool:  o.Pool,
+func createRiveredEmailer(river *river.Client[pgx.Tx], pool *pgxpool.Pool) Notifier {
+	return &riveredEmailer{
+		river: river,
+		pool:  pool,
 	}
 }
 
-func (e *RiveredEmailer) Send(ctx context.Context, m Message) error {
+func (e *riveredEmailer) Send(ctx context.Context, m Message) error {
 	tx, err := e.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -50,7 +39,6 @@ func (e *RiveredEmailer) Send(ctx context.Context, m Message) error {
 
 	_, err = e.river.InsertTx(ctx, tx, emailArg{m}, &river.InsertOpts{
 		MaxAttempts: 3,
-		Priority:    river.PriorityDefault,
 		Queue:       "notification",
 	})
 
@@ -70,6 +58,28 @@ func (w *emailWorker) Work(ctx context.Context, job *river.Job[emailArg]) error 
 	return w.emailer.Send(ctx, job.Args.Message)
 }
 
-func init() {
-	RegisterNotifier(RiveredEmailNotifier, createRiveredEmailer)
+type riveredEmailProvider struct {
+	opt *EmailerOption
+}
+
+func RiveredEmailProvider(opt *EmailerOption) NotifierProvider {
+	return &riveredEmailProvider{
+		opt: opt,
+	}
+}
+
+func (p *riveredEmailProvider) registerProvider(notifier Notifier, registry NotifierRegistry) {
+	registry.Register(RiveredEmailNotifier, notifier)
+}
+
+func (p *riveredEmailProvider) Register() fx.Option {
+	return fx.Module("notifier.rivered_emailer",
+		fx.Provide(fx.Private, createRiveredEmailer),
+		fx.Invoke(p.registerProvider),
+		fx.Invoke(func() {
+			river.AddWorker(workers, &emailWorker{
+				emailer: newEmailNotifier(p.opt),
+			})
+		}),
+	)
 }
