@@ -76,7 +76,7 @@ func (p *riveredEmailProvider) Register() fx.Option {
 	return fx.Module("notifier.rivered_emailer",
 		fx.Provide(fx.Private, createRiveredEmailer),
 		fx.Invoke(p.registerProvider),
-		fx.Invoke(func() {
+		fx.Invoke(func(workers *river.Workers) {
 			river.AddWorker(workers, &emailWorker{
 				emailer: newEmailNotifier(p.opt),
 			})
