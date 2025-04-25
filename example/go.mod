@@ -9,7 +9,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/riverqueue/river v0.20.2
 	github.com/spf13/cobra v1.9.1
-	github.com/thoriqadillah/gema v0.0.0-20250425035832-8c33dcb4904d
+	github.com/thoriqadillah/gema v0.0.0-20250425041119-cf38e3b4cfe6
 	go.uber.org/fx v1.23.0
 )
 
