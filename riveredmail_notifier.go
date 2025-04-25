@@ -39,7 +39,7 @@ func (e *riveredEmailer) Send(ctx context.Context, m Message) error {
 
 	_, err = e.river.InsertTx(ctx, tx, emailArg{m}, &river.InsertOpts{
 		MaxAttempts: 3,
-		Queue:       "notification",
+		Queue:       NotifierQueue,
 	})
 
 	if err != nil {
