@@ -18,7 +18,7 @@ type parser struct {
 	value string
 }
 
-func ParseString(str string) Parser {
+func parseString(str string) Parser {
 	return &parser{str}
 }
 

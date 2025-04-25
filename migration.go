@@ -43,7 +43,7 @@ func upCmd(sqldb *sql.DB, dir string) *cobra.Command {
 
 			if len(args) > 0 {
 				version := args[0]
-				return goose.UpToContext(ctx, sqldb, dir, int64(ParseString(version).Int()))
+				return goose.UpToContext(ctx, sqldb, dir, int64(parseString(version).Int()))
 			}
 
 			return goose.UpContext(ctx, sqldb, dir)
@@ -68,7 +68,7 @@ func downCmd(sqldb *sql.DB, dir string) *cobra.Command {
 				return goose.DownContext(ctx, sqldb, dir)
 			}
 
-			return goose.DownToContext(ctx, sqldb, dir, int64(ParseString(version).Int()))
+			return goose.DownToContext(ctx, sqldb, dir, int64(parseString(version).Int()))
 		},
 	}
 
