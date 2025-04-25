@@ -1,7 +1,15 @@
 package main
 
-import "github.com/thoriqadillah/gema"
+import (
+	"os"
+
+	"github.com/thoriqadillah/gema"
+)
+
+func env(k string) gema.Parser {
+	return gema.ParseString(os.Getenv(k))
+}
 
 var (
-	DB_URL = gema.Env("DB_URL").String("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+	DB_URL = env("DB_URL").String("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
 )
