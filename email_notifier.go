@@ -23,7 +23,8 @@ type EmailerOption struct {
 	Name     string
 	Env      string
 
-	// TemplateFs will be used to parse the template using html/template
+	// TemplateFs will be used to parse the template using html/template (optional).
+	// You can still pass html string directly to the Send method.
 	TemplateFs fs.FS
 }
 
@@ -34,9 +35,14 @@ type emailer struct {
 }
 
 func newEmailNotifier(o *EmailerOption) Notifier {
-	tmpl, err := template.ParseFS(o.TemplateFs, "**/*.html")
-	if err != nil {
-		panic(err)
+	var tmpl *template.Template
+	if o.TemplateFs != nil {
+		t, err := template.ParseFS(o.TemplateFs, "**/*.html")
+		if err != nil {
+			panic(err)
+		}
+
+		tmpl = t
 	}
 
 	return &emailer{
@@ -70,7 +76,7 @@ func (e *emailer) Send(ctx context.Context, m Message) error {
 		msg = m.Html
 	} else if m.Template != "" {
 		if e.opt.TemplateFs == nil {
-			return fmt.Errorf("template fs not provided")
+			return fmt.Errorf("gema: template fs is not provided")
 		}
 
 		mimetype = "text/html"
@@ -83,7 +89,7 @@ func (e *emailer) Send(ctx context.Context, m Message) error {
 		mimetype = "text/html"
 		msg = m.Html
 	} else {
-		return fmt.Errorf("no body provided")
+		return fmt.Errorf("gema: no body provided")
 	}
 
 	from := m.From
