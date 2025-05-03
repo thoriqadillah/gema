@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"path/filepath"
+	"io/fs"
 
 	"go.uber.org/fx"
 	"gopkg.in/gomail.v2"
@@ -22,17 +22,26 @@ type EmailerOption struct {
 	From     string
 	Name     string
 	Env      string
-	Template *template.Template
+
+	// TemplateFs will be used to parse the template using html/template
+	TemplateFs fs.FS
 }
 
 type emailer struct {
-	opt    *EmailerOption
-	mailer *gomail.Dialer
+	opt      *EmailerOption
+	mailer   *gomail.Dialer
+	template *template.Template
 }
 
 func newEmailNotifier(o *EmailerOption) Notifier {
+	tmpl, err := template.ParseFS(o.TemplateFs, "**/*.html")
+	if err != nil {
+		panic(err)
+	}
+
 	return &emailer{
-		opt: o,
+		opt:      o,
+		template: tmpl,
 		mailer: gomail.NewDialer(
 			o.Host,
 			o.Port,
@@ -53,18 +62,28 @@ func (e *emailer) Send(ctx context.Context, m Message) error {
 		return nil
 	}
 
-	mimetype := "text/plain"
-	msg := m.Body
+	var msg string
+	var mimetype string
 
-	ext := filepath.Ext(m.Body)
-	if ext == ".html" {
-		mimetype = "text/html"
-		var buff bytes.Buffer
-		if err := e.opt.Template.ExecuteTemplate(&buff, m.Body, m.Data); err != nil {
-			return err
+	if m.Text != "" {
+		mimetype = "text/plain"
+		msg = m.Html
+	} else if m.Template != "" {
+		if e.opt.TemplateFs == nil {
+			return fmt.Errorf("template fs not provided")
 		}
 
+		mimetype = "text/html"
+		var buff bytes.Buffer
+		if err := e.template.ExecuteTemplate(&buff, m.Template, m.Data); err != nil {
+			return err
+		}
 		msg = buff.String()
+	} else if m.Html != "" {
+		mimetype = "text/html"
+		msg = m.Html
+	} else {
+		return fmt.Errorf("no body provided")
 	}
 
 	from := m.From

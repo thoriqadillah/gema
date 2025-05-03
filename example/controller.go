@@ -47,9 +47,9 @@ func (e *exampleController) notification(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	err := e.mailer.Send(ctx, gema.Message{
-		To:      []string{"hello@gema.com"},
-		Subject: "Hello World",
-		Body:    "example.html",
+		To:       []string{"hello@gema.com"},
+		Subject:  "Hello World",
+		Template: "example.html",
 	})
 
 	if err != nil {

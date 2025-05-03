@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"fmt"
-	"html/template"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -16,15 +15,6 @@ import (
 
 //go:embed templates
 var templateFs embed.FS
-
-func emailTemplate() *template.Template {
-	tmpl, err := template.ParseFS(templateFs, "templates/*.html")
-	if err != nil {
-		panic(err)
-	}
-
-	return tmpl
-}
 
 func httpServer() *echo.Echo {
 	e := echo.New()
@@ -71,19 +61,19 @@ func main() {
 				river.QueueDefault: {
 					MaxWorkers: river.QueueNumWorkersMax,
 				},
-				"notification": {
+				gema.NotifierQueue: {
 					MaxWorkers: 100,
 				},
 			},
 		}),
 		gema.NotifierModule(
 			gema.EmailerProvider(&gema.EmailerOption{
-				Env:      APP_ENV,
-				Template: emailTemplate(),
+				Env:        APP_ENV,
+				TemplateFs: templateFs,
 			}),
 			gema.RiveredEmailProvider(&gema.EmailerOption{
-				Env:      APP_ENV,
-				Template: emailTemplate(),
+				Env:        APP_ENV,
+				TemplateFs: templateFs,
 			}),
 		),
 		gema.StorageModule(

@@ -15,18 +15,24 @@ type Notifier interface {
 
 type NotifierName string
 
-type Data map[string]interface{}
+type NotifierData map[string]interface{}
 
 type Message struct {
 	Subject string
-	// Body can be a message string or template name.
-	// Example:
-	//
-	// 1. Hello world -> this will set the body type to be text/plain and pass it as is
-	//
-	// 2. verify.html -> this will look into template folder and set the body type to be text/html and pass the html file as a template
-	Body string
-	Data Data
+
+	// Html is html string. It will be used as the body of the notifier.
+	// Mutually exclusive with Template and Text
+	Html string
+
+	// Template is the path to the template.
+	// Mutually exclusive with Html and Text
+	Template string
+
+	// Text is the text string. It will be used as the body of the notifier.
+	// Mutually exclusive with Html and Template
+	Text string
+
+	Data NotifierData
 	From string
 	To   []string
 	Bcc  []string
