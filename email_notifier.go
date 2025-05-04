@@ -58,16 +58,6 @@ func newEmailNotifier(o *EmailerOption) Notifier {
 }
 
 func (e *emailer) Send(ctx context.Context, m Message) error {
-	if e.opt.Env == "development" {
-		b, err := json.MarshalIndent(m, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(string(b))
-		return nil
-	}
-
 	var msg string
 	var mimetype string
 
@@ -90,6 +80,17 @@ func (e *emailer) Send(ctx context.Context, m Message) error {
 		msg = m.Html
 	} else {
 		return fmt.Errorf("gema: no body provided")
+	}
+
+	if e.opt.Env == "development" {
+		b, err := json.MarshalIndent(m, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(b))
+		fmt.Println(msg)
+		return nil
 	}
 
 	from := m.From

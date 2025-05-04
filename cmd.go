@@ -16,6 +16,7 @@ type CommandConstructor interface{}
 
 var root *cobra.Command
 
+// CommandModule is a module that registers your command to the root command.
 func CommandModule(desc string, cmds ...CommandConstructor) fx.Option {
 	root = &cobra.Command{
 		Use:   "cmd",

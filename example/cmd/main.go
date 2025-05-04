@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/thoriqadillah/gema"
@@ -32,9 +33,14 @@ func main() {
 
 	godotenv.Load()
 
+	dbConfig, err := pgxpool.ParseConfig(DB_URL)
+	if err != nil {
+		panic(err)
+	}
+
 	app := fx.New(
 		fx.NopLogger,
-		gema.DatabaseModule(DB_URL),
+		gema.DatabaseModule(dbConfig),
 		gema.CommandModule("Command line application",
 			helloWorld,
 			gema.MigrationCommand(migrationFs, "migrations"),

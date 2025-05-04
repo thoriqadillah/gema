@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -24,9 +25,11 @@ func httpServer() *echo.Echo {
 	return e
 }
 
-func main() {
+func init() {
 	godotenv.Load()
+}
 
+func main() {
 	gema.RegisterValidator(map[string]validator.Func{
 		"password": func(fl validator.FieldLevel) bool {
 			password := fl.Field().String()
@@ -50,13 +53,23 @@ func main() {
 		},
 	})
 
+	dbConfig, err := pgxpool.ParseConfig(DB_URL)
+	if err != nil {
+		panic(err)
+	}
+
+	queueDbConfig, err := pgxpool.ParseConfig(DB_QUEUE_URL)
+	if err != nil {
+		panic(err)
+	}
+
 	app := fx.New(
 		gema.FxLogger,
 		gema.LoggerModule(APP_ENV),
 		fx.Provide(httpServer),
-		gema.DatabaseModule(DB_URL),
+		gema.DatabaseModule(dbConfig),
 		gema.TransactionalClsModule,
-		gema.RiverQueueModule(&river.Config{
+		gema.RiverQueueModule(queueDbConfig, &river.Config{
 			Queues: map[string]river.QueueConfig{
 				river.QueueDefault: {
 					MaxWorkers: river.QueueNumWorkersMax,
@@ -70,10 +83,22 @@ func main() {
 			gema.EmailerProvider(&gema.EmailerOption{
 				Env:        APP_ENV,
 				TemplateFs: templateFs,
+				Host:       MAILER_HOST,
+				Port:       MAILER_PORT,
+				Username:   MAILER_USER,
+				Password:   MAILER_PASS,
+				From:       MAILER_FROM,
+				Name:       MAILER_NAME,
 			}),
 			gema.RiveredEmailProvider(&gema.EmailerOption{
 				Env:        APP_ENV,
 				TemplateFs: templateFs,
+				Host:       MAILER_HOST,
+				Port:       MAILER_PORT,
+				Username:   MAILER_USER,
+				Password:   MAILER_PASS,
+				From:       MAILER_FROM,
+				Name:       MAILER_NAME,
 			}),
 		),
 		gema.StorageModule(

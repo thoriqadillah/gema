@@ -14,21 +14,10 @@ import (
 	"go.uber.org/fx"
 )
 
-// DatabaseModule connect the database using bun with pgxpool
-// This module will also provide the database connection to the echo context
-// to propagate request based db transaction
-func DatabaseModule(dsn string) fx.Option {
-	config, err := pgxpool.ParseConfig(dsn)
-	if err != nil {
-		panic(err)
-	}
-
-	return DatabaseModuleWithOption(config)
-}
-
-func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
+// DatabaseModule connect the database using bun with pgxpool and provides the bun.DB instance.
+func DatabaseModule(config *pgxpool.Config) fx.Option {
 	return fx.Module("database", fx.Provide(
-		func(lc fx.Lifecycle) (*pgxpool.Pool, *bun.DB) {
+		func(lc fx.Lifecycle) *bun.DB {
 			pool, err := pgxpool.NewWithConfig(context.Background(), config)
 			if err != nil {
 				log.Fatal(err)
@@ -47,7 +36,7 @@ func DatabaseModuleWithOption(config *pgxpool.Config) fx.Option {
 				},
 			})
 
-			return pool, bundb
+			return bundb
 		},
 	))
 }
