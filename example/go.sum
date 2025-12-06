@@ -90,8 +90,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/thoriqadillah/gema v0.0.0-20251206072453-800faeaaecba h1:16ynBuSjz/q9hWUmu0ky1SsJhQdpsJFUOMw8pgqpxiw=
-github.com/thoriqadillah/gema v0.0.0-20251206072453-800faeaaecba/go.mod h1:59z6oW8gw4W1l5vyM4RfNTzUtBjz8K/MBv59rNyOOqQ=
+github.com/thoriqadillah/gema v0.0.1 h1:lceOvCNv4iWSL8vR+m+tsxENSa+AOuXMcQnlY3vjNjo=
+github.com/thoriqadillah/gema v0.0.1/go.mod h1:xnvq2yPicl4++aSzvXlU+4cra8O9QuHyA1HxHAk9tjs=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
 github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
