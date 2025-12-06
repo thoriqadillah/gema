@@ -21,7 +21,6 @@ func init() {
 	APP_ENV = gema.Env("APP_ENV").String("development")
 	PORT = gema.Env("APP_PORT").String(":8001")
 	DB_URL = gema.Env("DB_URL").String("postgres://postgres:gema@localhost:5433/gema?sslmode=disable")
-	DB_QUEUE_URL = gema.Env("DB_URL").String("postgres://postgres:gema@localhost:5433/gema?sslmode=disable&search_path=message_queue")
 	MAILER_HOST = gema.Env("MAILER_HOST").String("smtp.gmail.com")
 	MAILER_PORT = gema.Env("MAILER_PORT").Int(587)
 	MAILER_USER = gema.Env("MAILER_USER").String()

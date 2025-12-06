@@ -1,58 +1,32 @@
-package main
+package controller
 
 import (
-	"context"
-	"path/filepath"
+	"example/service"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/thoriqadillah/gema"
-	"go.uber.org/fx"
-)
-
-var exampleModule = fx.Module("example",
-	fx.Provide(fx.Private, newStore),
-	gema.RegisterController(newController),
 )
 
 type exampleController struct {
-	store   Store
-	mailer  gema.Notifier
-	cls     *gema.TransactionalCls
-	storage gema.Storage
+	svc *service.ExampleService
 }
 
-func newController(
-	store Store,
-	cls *gema.TransactionalCls,
-	storageFactory gema.StorageFactory,
-	notifierFactory gema.NotifierFactory,
-) gema.Controller {
+func NewController(svc *service.ExampleService) gema.Controller {
 	return &exampleController{
-		cls:     cls,
-		store:   store,
-		storage: storageFactory.Disk(gema.LocalStorage),
-		mailer:  notifierFactory.Create(gema.RiveredEmailNotifier),
+		svc: svc,
 	}
 }
 
 func (e *exampleController) hello(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	message := e.store.Hello(ctx)
+	message := e.svc.Hello(ctx)
 	return c.String(200, message)
 }
 
 func (e *exampleController) notification(c echo.Context) error {
 	ctx := c.Request().Context()
-
-	err := e.mailer.Send(ctx, gema.Message{
-		To:       []string{"hello@gema.com"},
-		Subject:  "Hello World",
-		Template: "example.html",
-	})
-
-	if err != nil {
+	if err := e.svc.Notification(ctx); err != nil {
 		return err
 	}
 
@@ -61,15 +35,12 @@ func (e *exampleController) notification(c echo.Context) error {
 
 func (e *exampleController) transactional(c echo.Context) error {
 	ctx := c.Request().Context()
+	message, err := e.svc.Transaction(ctx)
+	if err != nil {
+		return err
+	}
 
-	return e.cls.Transactional(ctx, func(ctx context.Context) error {
-		message := e.store.Hello(ctx)
-		if err := e.store.Foo(ctx); err != nil {
-			return err
-		}
-
-		return c.String(200, message)
-	})
+	return c.String(200, message)
 }
 
 func (e *exampleController) validate(c echo.Context) error {
@@ -94,11 +65,7 @@ func (e *exampleController) upload(c echo.Context) error {
 
 	defer f.Close()
 
-	ext := filepath.Ext(file.Filename)
-	id := uuid.NewString()
-	filename := id + ext
-
-	url, err := e.storage.Upload(filename, f)
+	url, err := e.svc.Upload(f, file.Filename)
 	if err != nil {
 		return err
 	}

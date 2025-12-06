@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"example/controller"
+	"example/service"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
@@ -9,7 +11,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/riverqueue/river"
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
 )
@@ -25,11 +26,7 @@ func httpServer() *echo.Echo {
 	return e
 }
 
-func init() {
-	godotenv.Load()
-}
-
-func main() {
+func registerValidation() {
 	gema.RegisterValidator(map[string]validator.Func{
 		"password": func(fl validator.FieldLevel) bool {
 			password := fl.Field().String()
@@ -52,15 +49,22 @@ func main() {
 			return hasNumber && hasAlphabet && hasSpecial
 		},
 	})
+}
 
+func init() {
+	godotenv.Load()
+}
+
+func main() {
+	registerValidation()
 	dbConfig, err := pgxpool.ParseConfig(DB_URL)
 	if err != nil {
 		panic(err)
 	}
 
-	queueDbConfig, err := pgxpool.ParseConfig(DB_QUEUE_URL)
-	if err != nil {
-		panic(err)
+	storageConfig := &gema.LocalStorageOption{
+		TempDir:       "./storage",
+		FullRoutePath: fmt.Sprintf("http://localhost%s/storage", PORT),
 	}
 
 	app := fx.New(
@@ -69,16 +73,6 @@ func main() {
 		fx.Provide(httpServer),
 		gema.DatabaseModule(dbConfig),
 		gema.TransactionalClsModule,
-		gema.RiverQueueModule(queueDbConfig, &river.Config{
-			Queues: map[string]river.QueueConfig{
-				river.QueueDefault: {
-					MaxWorkers: river.QueueNumWorkersMax,
-				},
-				gema.NotifierQueue: {
-					MaxWorkers: 100,
-				},
-			},
-		}),
 		gema.NotifierModule(
 			gema.EmailerProvider(&gema.EmailerOption{
 				Env:        APP_ENV,
@@ -90,24 +84,10 @@ func main() {
 				From:       MAILER_FROM,
 				Name:       MAILER_NAME,
 			}),
-			gema.RiveredEmailProvider(&gema.EmailerOption{
-				Env:        APP_ENV,
-				TemplateFs: templateFs,
-				Host:       MAILER_HOST,
-				Port:       MAILER_PORT,
-				Username:   MAILER_USER,
-				Password:   MAILER_PASS,
-				From:       MAILER_FROM,
-				Name:       MAILER_NAME,
-			}),
 		),
-		gema.StorageModule(
-			gema.LocalStorageProvider(&gema.LocalStorageOption{
-				TempDir:       "./storage",
-				FullRoutePath: fmt.Sprintf("http://localhost%s/storage", PORT),
-			}),
-		),
-		exampleModule,
+		gema.StorageModule(gema.LocalStorageProvider(storageConfig)),
+		service.NewExample(),
+		gema.RegisterController(controller.NewController),
 		gema.Start(PORT),
 	)
 
