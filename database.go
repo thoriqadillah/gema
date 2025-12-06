@@ -17,7 +17,7 @@ import (
 // DatabaseModule connect the database using bun with pgxpool and provides the bun.DB instance.
 func DatabaseModule(config *pgxpool.Config) fx.Option {
 	return fx.Module("database", fx.Provide(
-		func(lc fx.Lifecycle) *bun.DB {
+		func(lc fx.Lifecycle) (*pgxpool.Pool, *sql.DB, *bun.DB) {
 			pool, err := pgxpool.NewWithConfig(context.Background(), config)
 			if err != nil {
 				log.Fatal(err)
@@ -36,7 +36,7 @@ func DatabaseModule(config *pgxpool.Config) fx.Option {
 				},
 			})
 
-			return bundb
+			return pool, sqldb, bundb
 		},
 	))
 }

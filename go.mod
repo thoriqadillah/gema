@@ -11,7 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/riverqueue/river v0.20.2
-	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.20.2
+	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.20.2
 	github.com/spf13/cobra v1.9.1
 	github.com/uptrace/bun v1.2.11
 	github.com/uptrace/bun/dialect/pgdialect v1.2.11
@@ -30,6 +30,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect

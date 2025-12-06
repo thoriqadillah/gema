@@ -1,12 +1,10 @@
 package gema
 
 import (
-	"context"
+	"database/sql"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"go.uber.org/fx"
 )
 
@@ -18,43 +16,20 @@ import (
 // This river queue module will create a new connection pool to the database. That means you will have 2 connection pools.
 // One for the public schema and one for the river queue schema.
 //
-// This module will provide pgxpool.Pool and river.Client[pgx.Tx].
-func RiverQueueModule(connConfig *pgxpool.Config, queueConfig *river.Config) fx.Option {
-	var createQueue = func(lc fx.Lifecycle, workers *river.Workers) (*river.Client[pgx.Tx], *pgxpool.Pool) {
+// This module will provide pgxpool.Pool and river.Client[*sql.Tx].
+func RiverQueueModule(queueConfig *river.Config) fx.Option {
+	var createQueue = func(lc fx.Lifecycle, sqldb *sql.DB, workers *river.Workers) *river.Client[*sql.Tx] {
 		queueConfig.Workers = workers
 
-		pool, err := pgxpool.NewWithConfig(context.Background(), connConfig)
+		client, err := river.NewClient(riverdatabasesql.New(sqldb), queueConfig)
 		if err != nil {
 			panic(err)
 		}
 
-		client, err := river.NewClient(riverpgxv5.New(pool), queueConfig)
-		if err != nil {
-			panic(err)
-		}
-
-		lc.Append(fx.Hook{
-			OnStart: func(ctx context.Context) error {
-				if err := pool.Ping(ctx); err != nil {
-					return err
-				}
-
-				return client.Start(context.Background())
-			},
-			OnStop: func(ctx context.Context) error {
-				if err := client.Stop(ctx); err != nil {
-					return err
-				}
-
-				pool.Close()
-				return nil
-			},
-		})
-
-		return client, pool
+		return client
 	}
 
-	return fx.Module("messagequeue",
+	return fx.Module("message_queue",
 		fx.Provide(river.NewWorkers),
 		fx.Provide(createQueue),
 	)
