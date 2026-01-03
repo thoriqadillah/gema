@@ -25,18 +25,24 @@ type ControllerConstructor any
 
 var controllers = make([]Controller, 0)
 
-func registerController(c ...Controller) {
-	controllers = append(controllers, c...)
+func registerController(c Controller) {
+	controllers = append(controllers, c)
 }
 
 // RegisterController will register invoke the controller constructor
 // and register the controller to the echo instance as well as any other providers
 // that are passed in
-func RegisterController(controller ...ControllerConstructor) fx.Option {
-	return fx.Module("controller",
-		fx.Provide(fx.Private, controller),
-		fx.Invoke(registerController),
-	)
+func RegisterController(controllers ...ControllerConstructor) fx.Option {
+	options := make([]fx.Option, len(controllers))
+	for i, c := range controllers {
+		options[i] = fx.Module(
+			fmt.Sprintf("controllers.%d", i),
+			fx.Provide(fx.Private, c),
+			fx.Invoke(registerController),
+		)
+	}
+
+	return fx.Module("controller", options...)
 }
 
 // Start will start the echo server and register the controllers
