@@ -12,7 +12,7 @@ type cmdParam struct {
 
 // CommandConstructor is a function that accepts any number of providers
 // and returns a *cobra.Command
-type CommandConstructor interface{}
+type CommandConstructor any
 
 var root *cobra.Command
 

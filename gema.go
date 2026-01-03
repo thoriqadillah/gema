@@ -21,18 +21,18 @@ type Closer interface {
 }
 
 // ControllerConstructor is any function that accepts any number of arguments and returns `Controller` of values without error
-type ControllerConstructor interface{}
+type ControllerConstructor any
 
 var controllers = make([]Controller, 0)
 
-func registerController(c Controller) {
-	controllers = append(controllers, c)
+func registerController(c ...Controller) {
+	controllers = append(controllers, c...)
 }
 
 // RegisterController will register invoke the controller constructor
 // and register the controller to the echo instance as well as any other providers
 // that are passed in
-func RegisterController(controller ControllerConstructor) fx.Option {
+func RegisterController(controller ...ControllerConstructor) fx.Option {
 	return fx.Module("controller",
 		fx.Provide(fx.Private, controller),
 		fx.Invoke(registerController),
