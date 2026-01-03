@@ -9,7 +9,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/spf13/cobra v1.10.2
-	github.com/thoriqadillah/gema v0.0.1
+	github.com/thoriqadillah/gema v0.0.0-20260103040757-3a48c8022351
 	go.uber.org/fx v1.24.0
 )
 
