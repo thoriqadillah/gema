@@ -27,11 +27,19 @@ func helloWorld() *cobra.Command {
 	}
 }
 
-func main() {
+func notifyContext(lc fx.Lifecycle, sh fx.Shutdowner) context.Context {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGABRT, syscall.SIGTERM)
-	defer stop()
+	lc.Append(fx.StopHook(func() error {
+		stop()
+		return sh.Shutdown()
+	}))
 
+	return ctx
+}
+
+func main() {
 	godotenv.Load()
+	ctx := context.Background()
 
 	dbConfig, err := pgxpool.ParseConfig(DB_URL)
 	if err != nil {
@@ -40,6 +48,7 @@ func main() {
 
 	app := fx.New(
 		fx.NopLogger,
+		fx.Provide(notifyContext),
 		gema.DatabaseModule(dbConfig),
 		gema.CommandModule("Command line application",
 			helloWorld,
@@ -49,4 +58,6 @@ func main() {
 	)
 
 	app.Start(ctx)
+	app.Stop(ctx)
+	<-app.Done()
 }
