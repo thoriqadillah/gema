@@ -1,14 +1,14 @@
 package gema
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
-
-type cmdParam struct {
-	fx.In
-	*cobra.Command `name:"root"`
-}
 
 // CommandConstructor is a function that accepts any number of providers
 // and returns a *cobra.Command
@@ -23,8 +23,16 @@ func CommandModule(desc string, cmds ...CommandConstructor) fx.Option {
 		Short: desc,
 	}
 
-	var startCmd = func(lc fx.Lifecycle) {
-		lc.Append(fx.StartHook(root.Execute))
+	var startCmd = func(lc fx.Lifecycle, sh fx.Shutdowner) {
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGABRT, syscall.SIGTERM)
+		lc.Append(fx.StopHook(func() error {
+			cancel()
+			return sh.Shutdown()
+		}))
+
+		lc.Append(fx.StartHook(func() error {
+			return root.ExecuteContext(ctx)
+		}))
 	}
 
 	var registerCmd = func(c *cobra.Command) {
