@@ -6,7 +6,7 @@ require (
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
-	github.com/thoriqadillah/gema v0.0.0-20260104115555-b68a10e37f25
+	github.com/thoriqadillah/gema v0.0.0-20260112112359-4bac155a10c2
 	go.uber.org/fx v1.24.0
 )
 

@@ -68,6 +68,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/thoriqadillah/gema v0.0.0-20260104115555-b68a10e37f25 h1:xu/ZplMQXByrYh+VbAoJFx/MONjTVtpIk5s1Lm0OQIk=
 github.com/thoriqadillah/gema v0.0.0-20260104115555-b68a10e37f25/go.mod h1:LLOHzI3I1AMyRYx33PQp0XzJo/Vdj9uPe94kOy3ftWs=
+github.com/thoriqadillah/gema v0.0.0-20260112112359-4bac155a10c2 h1:w4b1tZ4OduKfEPj6rYlVt7amrqnvSgdGMPbTr5c43m0=
+github.com/thoriqadillah/gema v0.0.0-20260112112359-4bac155a10c2/go.mod h1:LLOHzI3I1AMyRYx33PQp0XzJo/Vdj9uPe94kOy3ftWs=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc h1:9lRDQMhESg+zvGYmW5DyG0UqvY96Bu5QYsTLvCHdrgo=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc/go.mod h1:bciPuU6GHm1iF1pBvUfxfsH0Wmnc2VbpgvbI9ZWuIRs=
 github.com/uptrace/bun v1.2.11 h1:l9dTymsdZZAoSZ1+Qo3utms0RffgkDbIv+1UGk8N1wQ=

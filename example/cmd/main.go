@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"embed"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -27,16 +24,6 @@ func helloWorld() *cobra.Command {
 	}
 }
 
-func notifyContext(lc fx.Lifecycle, sh fx.Shutdowner) context.Context {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGABRT, syscall.SIGTERM)
-	lc.Append(fx.StopHook(func() error {
-		stop()
-		return sh.Shutdown()
-	}))
-
-	return ctx
-}
-
 func main() {
 	godotenv.Load()
 	ctx := context.Background()
@@ -48,7 +35,6 @@ func main() {
 
 	app := fx.New(
 		fx.NopLogger,
-		fx.Provide(notifyContext),
 		gema.DatabaseModule(dbConfig),
 		gema.CommandModule("Command line application",
 			helloWorld,
