@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmdexample/env"
 	"context"
 	"embed"
 
@@ -26,9 +27,10 @@ func helloWorld() *cobra.Command {
 
 func main() {
 	godotenv.Load()
+	env.Load()
 	ctx := context.Background()
 
-	dbConfig, err := pgxpool.ParseConfig(DB_URL)
+	dbConfig, err := pgxpool.ParseConfig(env.DB_URL)
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"example/controller"
+	"example/env"
 	"example/service"
 	"fmt"
 
@@ -51,43 +52,42 @@ func registerValidation() {
 	})
 }
 
-func init() {
-	godotenv.Load()
-}
-
 func main() {
+	godotenv.Load()
+	env.Load()
+
 	registerValidation()
-	dbConfig, err := pgxpool.ParseConfig(DB_URL)
+	dbConfig, err := pgxpool.ParseConfig(env.DB_URL)
 	if err != nil {
 		panic(err)
 	}
 
 	storageConfig := &gema.LocalStorageOption{
 		TempDir:       "./storage",
-		FullRoutePath: fmt.Sprintf("http://localhost%s/storage", PORT),
+		FullRoutePath: fmt.Sprintf("http://localhost%s/storage", env.PORT),
 	}
 
 	app := fx.New(
 		gema.FxLogger,
-		gema.LoggerModule(APP_ENV),
+		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
 		gema.DatabaseModule(dbConfig),
 		gema.NotifierModule(
 			gema.EmailerProvider(&gema.EmailerOption{
-				Env:        APP_ENV,
+				Env:        env.APP_ENV,
 				TemplateFs: templateFs,
-				Host:       MAILER_HOST,
-				Port:       MAILER_PORT,
-				Username:   MAILER_USER,
-				Password:   MAILER_PASS,
-				From:       MAILER_FROM,
-				Name:       MAILER_NAME,
+				Host:       env.MAILER_HOST,
+				Port:       env.MAILER_PORT,
+				Username:   env.MAILER_USER,
+				Password:   env.MAILER_PASS,
+				From:       env.MAILER_FROM,
+				Name:       env.MAILER_NAME,
 			}),
 		),
 		gema.StorageModule(gema.LocalStorageProvider(storageConfig)),
 		service.NewExample(),
 		gema.RegisterController(controller.NewController),
-		gema.Start(PORT),
+		gema.Start(env.PORT),
 	)
 
 	app.Run()
