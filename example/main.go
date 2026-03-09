@@ -72,7 +72,6 @@ func main() {
 		gema.LoggerModule(APP_ENV),
 		fx.Provide(httpServer),
 		gema.DatabaseModule(dbConfig),
-		gema.TransactionalClsModule,
 		gema.NotifierModule(
 			gema.EmailerProvider(&gema.EmailerOption{
 				Env:        APP_ENV,

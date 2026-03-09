@@ -11,20 +11,20 @@ import (
 )
 
 type ExampleService struct {
-	tx       *gema.TransactionalCls
+	db       *gema.DB
 	store    Store
 	storage  gema.Storage
 	notifier gema.Notifier
 }
 
 func newService(
-	tx *gema.TransactionalCls,
+	db *gema.DB,
 	store Store,
 	storageFactory gema.StorageFactory,
 	notifierFactory gema.NotifierFactory,
 ) *ExampleService {
 	return &ExampleService{
-		tx:       tx,
+		db:       db,
 		store:    store,
 		storage:  storageFactory.Disk(gema.LocalStorage),
 		notifier: notifierFactory.Create(gema.EmailNotifier),
@@ -44,12 +44,9 @@ func (s *ExampleService) Notification(ctx context.Context) error {
 }
 
 func (s *ExampleService) Transaction(ctx context.Context) (message string, err error) {
-	err = s.tx.Transactional(ctx, func(ctx context.Context) error {
+	err = s.db.TransactionFunc(ctx, func(ctx context.Context) error {
 		message = s.store.Hello(ctx)
-		if err := s.store.Foo(ctx); err != nil {
-			return err
-		}
-		return nil
+		return s.store.Foo(ctx)
 	})
 
 	return message, err

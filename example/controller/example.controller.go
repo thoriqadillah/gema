@@ -33,7 +33,7 @@ func (e *exampleController) notification(c echo.Context) error {
 	return c.String(200, "email sent")
 }
 
-func (e *exampleController) transactional(c echo.Context) error {
+func (e *exampleController) transaction(c echo.Context) error {
 	ctx := c.Request().Context()
 	message, err := e.svc.Transaction(ctx)
 	if err != nil {
@@ -79,6 +79,6 @@ func (e *exampleController) CreateRoutes(r *echo.Group) {
 	r.GET("/", e.hello)
 	r.POST("/validate", e.validate)
 	r.POST("/upload", e.upload)
-	r.GET("/transactional", e.transactional)
+	r.GET("/transaction", e.transaction)
 	r.GET("/notification", e.notification)
 }
