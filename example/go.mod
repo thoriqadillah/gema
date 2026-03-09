@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/thoriqadillah/gema v0.0.0-20260309022559-5f82717a67ef
+	github.com/thoriqadillah/gema v0.0.0-20260309042018-dbf0fd6e7f34
 	go.uber.org/fx v1.24.0
 )
 
