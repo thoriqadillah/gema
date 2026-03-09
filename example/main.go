@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
+	"google.golang.org/grpc"
 )
 
 //go:embed templates
@@ -25,6 +26,10 @@ func httpServer() *echo.Echo {
 	e.Use(middleware.Recover())
 
 	return e
+}
+
+func grpcServer() *grpc.Server {
+	return grpc.NewServer()
 }
 
 func registerValidation() {
@@ -71,6 +76,7 @@ func main() {
 		gema.FxLogger,
 		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
+		fx.Provide(grpcServer),
 		gema.DatabaseModule(dbConfig),
 		gema.NotifierModule(
 			gema.EmailerProvider(&gema.EmailerOption{
@@ -87,7 +93,8 @@ func main() {
 		gema.StorageModule(gema.LocalStorageProvider(storageConfig)),
 		service.NewExample(),
 		gema.RegisterController(controller.NewController),
-		gema.Start(env.PORT),
+		gema.StartHTTP(env.PORT),
+		gema.StartGRPC("localhost", ":1234"),
 	)
 
 	app.Run()

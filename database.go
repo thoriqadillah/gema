@@ -54,10 +54,10 @@ func (t *DB) Tx(ctx context.Context) bun.IDB {
 }
 
 // DatabaseModule connect the database using bun with pgxpool and provides the bun.DB instance.
-func DatabaseModule(config *pgxpool.Config) fx.Option {
+func DatabaseModule(dbUrl string) fx.Option {
 	return fx.Module("database", fx.Provide(
 		func(lc fx.Lifecycle) (*pgxpool.Pool, *sql.DB, *DB) {
-			pool, err := pgxpool.NewWithConfig(context.Background(), config)
+			pool, err := pgxpool.New(context.Background(), dbUrl)
 			if err != nil {
 				log.Fatal(err)
 			}
