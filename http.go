@@ -36,10 +36,10 @@ func RegisterController(constructors ...ControllerConstructor) fx.Option {
 	return fx.Module("controller", options...)
 }
 
-// Start will start the echo server and register the controllers
+// StartHTTP will start the echo server and register the controllers
 // to the echo instance. It will also create custom binder for added validation
 // and serializer for the echo instance
-func Start(port string) fx.Option {
+func StartHTTP(port string) fx.Option {
 	return fx.Module("start",
 		fx.Invoke(registerCustomBinder),
 		fx.Invoke(registerCustomSerializer),

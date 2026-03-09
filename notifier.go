@@ -7,8 +7,6 @@ import (
 	"go.uber.org/fx"
 )
 
-const NotifierQueue = "notification"
-
 type Notifier interface {
 	Send(ctx context.Context, m Message) error
 }
