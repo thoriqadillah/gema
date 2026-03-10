@@ -8,10 +8,10 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/riverqueue/river"
 	"github.com/thoriqadillah/gema"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
@@ -62,14 +62,15 @@ func main() {
 	env.Load()
 
 	registerValidation()
-	dbConfig, err := pgxpool.ParseConfig(env.DB_URL)
-	if err != nil {
-		panic(err)
-	}
-
 	storageConfig := &gema.LocalStorageOption{
 		TempDir:       "./storage",
 		FullRoutePath: fmt.Sprintf("http://localhost%s/storage", env.PORT),
+	}
+
+	queueConfig := map[string]river.QueueConfig{
+		river.QueueDefault: {
+			MaxWorkers: 100,
+		},
 	}
 
 	app := fx.New(
@@ -77,7 +78,7 @@ func main() {
 		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
 		fx.Provide(grpcServer),
-		gema.DatabaseModule(dbConfig),
+		gema.DatabaseModule(env.DB_URL),
 		gema.NotifierModule(
 			gema.EmailerProvider(&gema.EmailerOption{
 				Env:        env.APP_ENV,
@@ -91,10 +92,12 @@ func main() {
 			}),
 		),
 		gema.StorageModule(gema.LocalStorageProvider(storageConfig)),
-		service.NewExample(),
-		gema.RegisterController(controller.NewController),
+		gema.QueueClient(),
+		gema.QueueServer(queueConfig),
 		gema.StartHTTP(env.PORT),
 		gema.StartGRPC("localhost", ":1234"),
+		service.NewExample(),
+		gema.RegisterController(controller.NewController),
 	)
 
 	app.Run()

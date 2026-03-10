@@ -2,6 +2,7 @@ package controller
 
 import (
 	"example/service"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/thoriqadillah/gema"
@@ -75,10 +76,19 @@ func (e *exampleController) upload(c echo.Context) error {
 	})
 }
 
+func (e *exampleController) queueJob(c echo.Context) error {
+	if err := e.svc.QueueJob(c.Request().Context()); err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusOK)
+}
+
 func (e *exampleController) CreateRoutes(r *echo.Group) {
 	r.GET("/", e.hello)
 	r.POST("/validate", e.validate)
 	r.POST("/upload", e.upload)
 	r.GET("/transaction", e.transaction)
 	r.GET("/notification", e.notification)
+	r.GET("/queue", e.queueJob)
 }
