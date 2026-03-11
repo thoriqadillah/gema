@@ -1,4 +1,4 @@
-package service
+package example
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/riverqueue/river"
 	"github.com/thoriqadillah/gema"
-	"go.uber.org/fx"
 )
 
 type PrintArg struct {
@@ -101,12 +100,4 @@ func (s *ExampleService) QueueJob(ctx context.Context) error {
 		_, err := s.queue.InsertTx(ctx, tx.Tx, PrintArg{}, nil)
 		return err
 	})
-}
-
-func NewExample() fx.Option {
-	return fx.Module("example.service",
-		fx.Provide(fx.Private, newStore),
-		fx.Provide(newService),
-		fx.Invoke(newWorker),
-	)
 }

@@ -1,7 +1,7 @@
-package controller
+package example
 
 import (
-	"example/service"
+	"example/modules/example/api"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -9,10 +9,10 @@ import (
 )
 
 type exampleController struct {
-	svc *service.ExampleService
+	svc *ExampleService
 }
 
-func NewController(svc *service.ExampleService) gema.Controller {
+func newController(svc *ExampleService) gema.Controller {
 	return &exampleController{
 		svc: svc,
 	}
@@ -45,7 +45,7 @@ func (e *exampleController) transaction(c echo.Context) error {
 }
 
 func (e *exampleController) validate(c echo.Context) error {
-	var foo foo
+	var foo api.Foo
 	if err := c.Bind(&foo); err != nil {
 		return err
 	}

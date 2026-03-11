@@ -8,7 +8,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/riverqueue/river v0.31.0
-	github.com/thoriqadillah/gema v0.0.0-20260309105223-a95200a280c3
+	github.com/thoriqadillah/gema v0.0.0-20260311004053-b4b323a28d80
 	github.com/uptrace/bun v1.2.11
 	go.uber.org/fx v1.24.0
 	google.golang.org/grpc v1.71.0

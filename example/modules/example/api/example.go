@@ -1,8 +1,8 @@
-package controller
+package api
 
 import "github.com/thoriqadillah/gema"
 
-type foo struct {
+type Foo struct {
 	gema.Validate
 	Bar string `json:"bar" validate:"required"`
 }
