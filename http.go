@@ -2,7 +2,6 @@ package gema
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
@@ -12,44 +11,40 @@ type Controller interface {
 	CreateRoutes(r *echo.Group)
 }
 
-// ControllerConstructor is any function that accepts any number of arguments and returns `Controller` of values without error
-type ControllerConstructor any
-
-func registerController(e *echo.Echo, c Controller) {
-	r := e.Group("")
-	c.CreateRoutes(r)
+func AsController(constructor any) any {
+	return fx.Annotate(
+		constructor,
+		fx.As(new(Controller)),
+		fx.ResultTags(`group:"controllers"`),
+	)
 }
 
-// RegisterController will register invoke the controller constructor
-// and register the controller to the echo instance as well as any other providers
-// that are passed in
-func RegisterController(constructors ...ControllerConstructor) fx.Option {
-	options := make([]fx.Option, len(constructors))
-	for i, c := range constructors {
-		options[i] = fx.Module(
-			fmt.Sprintf("controllers.%d", i),
-			fx.Provide(fx.Private, c),
-			fx.Invoke(registerController),
-		)
-	}
+type httpParams struct {
+	fx.In
 
-	return fx.Module("controller", options...)
+	*echo.Echo
+	fx.Lifecycle
+	Controllers []Controller `group:"controllers"`
 }
 
 // StartHTTP will start the echo server and register the controllers
 // to the echo instance. It will also create custom binder for added validation
 // and serializer for the echo instance
-func StartHTTP(port string) fx.Option {
+func StartHTTP(address string) fx.Option {
 	return fx.Module("start",
 		fx.Invoke(registerCustomBinder),
 		fx.Invoke(registerCustomSerializer),
-		fx.Invoke(func(lc fx.Lifecycle, e *echo.Echo) {
-			lc.Append(fx.Hook{
+		fx.Invoke(func(p httpParams) {
+			for _, controller := range p.Controllers {
+				controller.CreateRoutes(p.Group(""))
+			}
+
+			p.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					go e.Start(port)
+					go p.Start(address)
 					return nil
 				},
-				OnStop: e.Shutdown,
+				OnStop: p.Shutdown,
 			})
 		}),
 	)

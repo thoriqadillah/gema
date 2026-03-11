@@ -115,7 +115,7 @@ func (l *localStorageProvider) Register() fx.Option {
 	return fx.Module("storage.local",
 		fx.Provide(fx.Private, l.provideOption),
 		fx.Provide(fx.Private, l.provideStorage),
-		RegisterController(newStorageController),
+		fx.Provide(AsController(newStorageController)),
 	)
 }
 

@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func StartGRPC(host, port string) fx.Option {
+func StartGrpc(host, port string) fx.Option {
 	return fx.Module("grpc",
 		fx.Invoke(func(lc fx.Lifecycle, server *grpc.Server) {
 			lc.Append(fx.StartHook(func() error {
