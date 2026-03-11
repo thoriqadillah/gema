@@ -97,7 +97,7 @@ func (s *ExampleService) Upload(file io.Reader, filename string) (url string, er
 func (s *ExampleService) QueueJob(ctx context.Context) error {
 	return s.db.TransactionFunc(ctx, func(ctx context.Context) error {
 		tx := db.UnwrapTx(s.db.Tx(ctx))
-		_, err := s.queue.InsertTx(ctx, tx.Tx, PrintArg{}, nil)
+		_, err := s.queue.InsertTx(ctx, tx.Tx, PrintArg{"hello"}, nil)
 		return err
 	})
 }

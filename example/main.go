@@ -64,18 +64,18 @@ func main() {
 	registerValidation()
 
 	app := fx.New(
-		gema.FxLogger,
+		// gema.FxLogger,
 		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
 		fx.Provide(grpcServer),
 		gema.DatabaseModule(env.DB_URL),
 		gema.NotifierModule(gema.EmailerProvider(emailConfig())),
 		gema.StorageModule(gema.LocalStorageProvider(storageConfig())),
-		gema.QueueClient(),
-		gema.QueueServer(queueConfig()),
+		gema.QueueModule(),
+		example.NewModule(),
+		gema.StartQueue(queueConfig()),
 		gema.StartHTTP(fmt.Sprintf(":%d", env.PORT)),
 		gema.StartGrpc("localhost", ":1234"),
-		example.NewModule(),
 	)
 
 	app.Run()
