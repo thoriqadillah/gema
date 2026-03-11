@@ -3,7 +3,8 @@ package gema
 import (
 	"context"
 	"database/sql"
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -19,6 +20,10 @@ type DB struct {
 
 type TxFunc = func(ctx context.Context) error
 
+type contextKey struct{}
+
+var txKey = contextKey{}
+
 // TransactionFunc will propagate request scoped db transaction. If any error happens
 // inside the transaction, it will rollback the the entire transaction.
 // Use `db.Tx(ctx)` to get the propagated db instance.
@@ -33,7 +38,7 @@ func (t *DB) TransactionFunc(ctx context.Context, txFunc TxFunc, options ...*sql
 		return err
 	}
 
-	ctx = context.WithValue(ctx, "tx", &tx)
+	ctx = context.WithValue(ctx, txKey, &tx)
 	if err := txFunc(ctx); err != nil {
 		return tx.Rollback()
 	}
@@ -45,7 +50,7 @@ func (t *DB) TransactionFunc(ctx context.Context, txFunc TxFunc, options ...*sql
 // Can be used as a transaction if it were run inside a `TransactionFunc` function.
 // Otherwise, it will return the default database instance
 func (t *DB) Tx(ctx context.Context) bun.IDB {
-	tx, ok := ctx.Value("tx").(*bun.Tx)
+	tx, ok := ctx.Value(txKey).(*bun.Tx)
 	if !ok {
 		return t.DB
 	}
@@ -59,7 +64,8 @@ func DatabaseModule(dbUrl string) fx.Option {
 		func(lc fx.Lifecycle) (*pgxpool.Pool, *sql.DB, *DB) {
 			pool, err := pgxpool.New(context.Background(), dbUrl)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("[Gema] Failed to connect to database: ", err)
+				os.Exit(1)
 			}
 
 			sqldb := stdlib.OpenDBFromPool(pool)

@@ -2,6 +2,8 @@ package gema
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
@@ -41,7 +43,12 @@ func StartHTTP(address string) fx.Option {
 
 			p.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					go p.Start(address)
+					go func() {
+						if err := p.Start(address); err != nil && err != http.ErrServerClosed {
+							fmt.Println("[Gema] Http server stopped with error: ", err)
+						}
+					}()
+
 					return nil
 				},
 				OnStop: p.Shutdown,

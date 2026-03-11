@@ -1,6 +1,7 @@
 package gema
 
 import (
+	"context"
 	"io"
 	"log"
 
@@ -10,11 +11,11 @@ import (
 type StorageName string
 
 type Storage interface {
-	Serve(filename string) (io.ReadCloser, error)
+	Serve(ctx context.Context, filename string) (io.ReadCloser, error)
 
 	// Upload will upload a file to the storage and return the url of the file
-	Upload(filename string, src io.Reader) (string, error)
-	Delete(filename string) error
+	Upload(ctx context.Context, filename string, src io.Reader) (string, error)
+	Delete(ctx context.Context, filename string) error
 }
 
 type StorageFactory interface {

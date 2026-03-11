@@ -2,6 +2,7 @@ package gema
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -22,14 +23,19 @@ func LoggerModule(env string, options ...zap.Option) fx.Option {
 
 			if env == "development" {
 				logger, err = zap.NewDevelopment(options...)
+			} else {
+				logger, err = zap.NewProduction(options...)
 			}
 
-			logger, err = zap.NewProduction(options...)
 			if err != nil {
-				panic(err)
+				fmt.Println("[Gema] Failed to create logger: ", err)
+				os.Exit(1)
 			}
 
-			lc.Append(fx.StopHook(logger.Sync))
+			lc.Append(fx.StopHook(func() {
+				logger.Sync()
+			}))
+
 			return logger
 		}),
 	)

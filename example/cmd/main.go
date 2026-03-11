@@ -5,7 +5,6 @@ import (
 	"context"
 	"embed"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/thoriqadillah/gema"
@@ -30,14 +29,9 @@ func main() {
 	env.Load()
 	ctx := context.Background()
 
-	dbConfig, err := pgxpool.ParseConfig(env.DB_URL)
-	if err != nil {
-		panic(err)
-	}
-
 	app := fx.New(
 		fx.NopLogger,
-		gema.DatabaseModule(dbConfig),
+		gema.DatabaseModule(env.DB_URL),
 		gema.CommandModule("Command line application",
 			helloWorld,
 			gema.MigrationCommand(migrationFs, "migrations"),

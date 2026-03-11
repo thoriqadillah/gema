@@ -3,6 +3,7 @@ package gema
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 
 	"github.com/go-playground/locales/en"
@@ -91,7 +92,8 @@ func registerCustomBinder(e *echo.Echo) {
 func RegisterValidator(registry map[string]validator.Func) {
 	for name, fn := range registry {
 		if err := validate.RegisterValidation(name, fn); err != nil {
-			panic(err)
+			fmt.Printf("[Gema] Failed to register %s validator: %v\n", name, err)
+			os.Exit(1)
 		}
 		fmt.Printf("[Gema] Custom validator registered: %s\n", name)
 	}

@@ -1,9 +1,9 @@
 package gema
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -31,11 +31,11 @@ func newLocalStorage(opt *LocalStorageOption) *localStorage {
 	}
 }
 
-func (l *localStorage) Serve(filename string) (io.ReadCloser, error) {
+func (l *localStorage) Serve(ctx context.Context, filename string) (io.ReadCloser, error) {
 	return os.Open(l.opt.TempDir + "/" + filename)
 }
 
-func (l *localStorage) Upload(filename string, src io.Reader) (string, error) {
+func (l *localStorage) Upload(ctx context.Context, filename string, src io.Reader) (string, error) {
 	file := filepath.Join(l.opt.TempDir, filename)
 
 	if err := os.MkdirAll(l.opt.TempDir, 0755); err != nil {
@@ -56,7 +56,7 @@ func (l *localStorage) Upload(filename string, src io.Reader) (string, error) {
 	return path, nil
 }
 
-func (l *localStorage) Delete(filename string) error {
+func (l *localStorage) Delete(ctx context.Context, filename string) error {
 	return os.Remove(l.opt.TempDir + "/" + filename)
 }
 
@@ -68,7 +68,8 @@ type storageController struct {
 func newStorageController(opt *LocalStorageOption, storage Storage) Controller {
 	url, err := url.Parse(opt.FullRoutePath)
 	if err != nil {
-		log.Fatalf("[Gema] Invalid route path %s", opt.FullRoutePath)
+		fmt.Println("[Gema] Invalid route path ", opt.FullRoutePath)
+		os.Exit(1)
 	}
 
 	return &storageController{
@@ -82,7 +83,7 @@ func (s *storageController) serve(c echo.Context) error {
 	ext := filepath.Ext(filename)
 	mimetype := mime.TypeByExtension(ext)
 
-	file, err := s.storage.Serve(filename)
+	file, err := s.storage.Serve(c.Request().Context(), filename)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("File %s not found", filename))
 	}

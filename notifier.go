@@ -2,7 +2,8 @@ package gema
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"os"
 
 	"go.uber.org/fx"
 )
@@ -13,7 +14,7 @@ type Notifier interface {
 
 type NotifierName string
 
-type NotifierData map[string]interface{}
+type NotifierData map[string]any
 
 type Message struct {
 	Subject string
@@ -66,8 +67,8 @@ func createNotifier(s NotifierRegistry) NotifierFactory {
 func (s *notifierFactory) Create(driver NotifierName) Notifier {
 	notifier, ok := s.registry[driver]
 	if !ok {
-		log.Fatalf("[Gema] Notifier with %s provider not found", driver)
-		return nil
+		fmt.Printf("[Gema] Notifier with %s provider not found\n", driver)
+		os.Exit(1)
 	}
 
 	return notifier

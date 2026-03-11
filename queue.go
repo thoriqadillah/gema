@@ -3,7 +3,9 @@ package gema
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,7 +18,8 @@ import (
 func newClient(sql *sql.DB) *river.Client[*sql.Tx] {
 	river, err := river.NewClient(riverdatabasesql.New(sql), &river.Config{})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("[Gema] Failed to create River client: %v", err)
+		os.Exit(1)
 	}
 
 	return river

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"os"
 
 	"go.uber.org/fx"
 	"gopkg.in/gomail.v2"
@@ -39,7 +40,8 @@ func newEmailNotifier(o *EmailerOption) Notifier {
 	if o.TemplateFs != nil {
 		t, err := template.ParseFS(o.TemplateFs, "**/*.html")
 		if err != nil {
-			panic(err)
+			fmt.Println("[Gema] Failed to parse email template: ", err)
+			os.Exit(1)
 		}
 
 		tmpl = t
@@ -63,7 +65,7 @@ func (e *emailer) Send(ctx context.Context, m Message) error {
 
 	if m.Text != "" {
 		mimetype = "text/plain"
-		msg = m.Html
+		msg = m.Text
 	} else if m.Template != "" {
 		if e.opt.TemplateFs == nil {
 			return fmt.Errorf("gema: template fs is not provided")

@@ -57,18 +57,16 @@ func downCmd(sqldb *sql.DB, dir string) *cobra.Command {
 	down := &cobra.Command{
 		Use:     "down",
 		Short:   "Rollback database migration",
-		Example: "  migrate down\n" + "  migrate <migration_name> <version>",
-		Args:    cobra.MaximumNArgs(2),
+		Example: "  migrate down\n" + "  migrate down <version>",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			migrationName := args[0]
-			version := args[1]
-			if migrationName == "" {
+			if len(args) == 0 {
 				return goose.DownContext(ctx, sqldb, dir)
 			}
 
-			return goose.DownToContext(ctx, sqldb, dir, int64(parseString(version).Int()))
+			return goose.DownToContext(ctx, sqldb, dir, int64(parseString(args[0]).Int()))
 		},
 	}
 
