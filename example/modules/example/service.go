@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/riverqueue/river"
 	"github.com/thoriqadillah/gema"
+	"go.uber.org/fx"
 )
 
 type PrintArg struct {
@@ -32,8 +33,20 @@ func (w *PrintWorker) Work(ctx context.Context, job *river.Job[PrintArg]) error 
 	return nil
 }
 
-func newWorker(workers *river.Workers) {
-	river.AddWorker(workers, &PrintWorker{})
+func (r *PrintWorker) Register(workers *river.Workers) {
+	river.AddWorker(workers, r)
+}
+
+func newWorker() gema.WorkerRegistrar {
+	return &PrintWorker{}
+}
+
+func AsWorker(constructor any) any {
+	return fx.Annotate(
+		constructor,
+		fx.As(new(Worker)),
+		fx.ResultTags(`group:"workers"`),
+	)
 }
 
 type ExampleService struct {

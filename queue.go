@@ -44,20 +44,45 @@ func newServer(queueConfig map[string]river.QueueConfig, pool *pgxpool.Pool, wor
 	return client
 }
 
+type QueueWorker interface {
+	Register(workers *river.Workers)
+}
+
+func AsWorker(constructor any) any {
+	return fx.Annotate(
+		constructor,
+		fx.As(new(QueueWorker)),
+		fx.ResultTags(`group:"workers"`),
+	)
+}
+
+type queueParams struct {
+	fx.In
+
+	fx.Lifecycle
+	*river.Client[pgx.Tx]
+	*river.Workers
+	QueueWorker []QueueWorker `group:"workers"`
+}
+
 func StartQueue(queueConfig map[string]river.QueueConfig) fx.Option {
 	return fx.Module("start_queue",
 		fx.Supply(queueConfig),
 		fx.Supply(river.NewWorkers()),
 		fx.Provide(fx.Private, newServer),
-		fx.Invoke(func(lc fx.Lifecycle, river *river.Client[pgx.Tx]) {
+		fx.Invoke(func(p queueParams) {
+			for _, worker := range p.QueueWorker {
+				worker.Register(p.Workers)
+			}
+
 			ctx, cancel := context.WithCancel(context.Background())
-			lc.Append(fx.Hook{
+			p.Append(fx.Hook{
 				OnStart: func(_ context.Context) error {
-					return river.Start(ctx)
+					return p.Start(ctx)
 				},
 				OnStop: func(stopCtx context.Context) error {
 					cancel()
-					return river.Stop(stopCtx)
+					return p.Stop(stopCtx)
 				},
 			})
 		}),
