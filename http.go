@@ -31,7 +31,7 @@ type httpParams struct {
 // to the echo instance. It will also create custom binder for added validation
 // and serializer for the echo instance
 func StartHTTP(address string) fx.Option {
-	return fx.Module("start",
+	return fx.Module("start_http",
 		fx.Invoke(registerCustomBinder),
 		fx.Invoke(registerCustomSerializer),
 		fx.Invoke(func(p httpParams) {

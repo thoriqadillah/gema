@@ -22,8 +22,8 @@ func newClient(sql *sql.DB) *river.Client[*sql.Tx] {
 	return river
 }
 
-func QueueClient() fx.Option {
-	return fx.Module("queue_client",
+func QueueModule() fx.Option {
+	return fx.Module("queue",
 		fx.Provide(newClient),
 	)
 }
@@ -41,20 +41,42 @@ func newServer(queueConfig map[string]river.QueueConfig, pool *pgxpool.Pool, wor
 	return client
 }
 
-func QueueServer(queueConfig map[string]river.QueueConfig) fx.Option {
-	return fx.Module("queue_server",
+func AsWorker(constructor any) any {
+	return fx.Annotate(
+		constructor,
+		fx.As(new(river.Worker[river.JobArgs])),
+		fx.ResultTags(`group:"workers"`),
+	)
+}
+
+type queueParams struct {
+	fx.In
+
+	lc    fx.Lifecycle
+	river *river.Client[pgx.Tx]
+	w     *river.Workers
+
+	Workers []river.Worker[river.JobArgs] `group:"workers"`
+}
+
+func StartQueue(queueConfig map[string]river.QueueConfig) fx.Option {
+	return fx.Module("start_queue",
 		fx.Supply(queueConfig),
 		fx.Supply(river.NewWorkers()),
 		fx.Provide(fx.Private, newServer),
-		fx.Invoke(func(lc fx.Lifecycle, client *river.Client[pgx.Tx], workers *river.Workers) {
+		fx.Invoke(func(p queueParams) {
+			for _, worker := range p.Workers {
+				river.AddWorker(p.w, worker)
+			}
+
 			ctx, cancel := context.WithCancel(context.Background())
-			lc.Append(fx.Hook{
+			p.lc.Append(fx.Hook{
 				OnStart: func(_ context.Context) error {
-					return client.Start(ctx)
+					return p.river.Start(ctx)
 				},
 				OnStop: func(stopCtx context.Context) error {
 					cancel()
-					return client.Stop(stopCtx)
+					return p.river.Stop(stopCtx)
 				},
 			})
 		}),

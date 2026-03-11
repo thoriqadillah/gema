@@ -9,7 +9,7 @@ import (
 )
 
 func StartGrpc(host, port string) fx.Option {
-	return fx.Module("grpc",
+	return fx.Module("start_grpc",
 		fx.Invoke(func(lc fx.Lifecycle, server *grpc.Server) {
 			lc.Append(fx.StartHook(func() error {
 				fmt.Println("[Gema] Starting gRPC server on " + host + port)
