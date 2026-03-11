@@ -81,12 +81,12 @@ func (s *ExampleService) Transaction(ctx context.Context) (message string, err e
 	return message, err
 }
 
-func (s *ExampleService) Upload(file io.Reader, filename string) (url string, err error) {
+func (s *ExampleService) Upload(ctx context.Context, file io.Reader, filename string) (url string, err error) {
 	ext := filepath.Ext(filename)
 	id := uuid.NewString()
 	filename = id + ext
 
-	url, err = s.storage.Upload(filename, file)
+	url, err = s.storage.Upload(ctx, filename, file)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +97,7 @@ func (s *ExampleService) Upload(file io.Reader, filename string) (url string, er
 func (s *ExampleService) QueueJob(ctx context.Context) error {
 	return s.db.TransactionFunc(ctx, func(ctx context.Context) error {
 		tx := db.UnwrapTx(s.db.Tx(ctx))
-		_, err := s.queue.InsertTx(ctx, tx.Tx, PrintArg{"hello"}, nil)
+		_, err := s.queue.InsertTx(ctx, tx, PrintArg{"hello"}, nil)
 		return err
 	})
 }

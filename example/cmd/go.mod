@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
-	github.com/thoriqadillah/gema v0.0.0-20260311014353-ab9e585bbd97
+	github.com/thoriqadillah/gema v0.0.0-20260311042150-7758a0db759b
 	go.uber.org/fx v1.24.0
 )
 

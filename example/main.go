@@ -64,7 +64,7 @@ func main() {
 	registerValidation()
 
 	app := fx.New(
-		// gema.FxLogger,
+		gema.FxLogger,
 		gema.LoggerModule(env.APP_ENV),
 		fx.Provide(httpServer),
 		fx.Provide(grpcServer),

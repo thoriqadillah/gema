@@ -66,7 +66,7 @@ func (e *exampleController) upload(c echo.Context) error {
 
 	defer f.Close()
 
-	url, err := e.svc.Upload(f, file.Filename)
+	url, err := e.svc.Upload(c.Request().Context(), f, file.Filename)
 	if err != nil {
 		return err
 	}
